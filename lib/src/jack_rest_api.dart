@@ -16,8 +16,8 @@ class JackRestApi {
     int? connectTimeout,
     bool Function()? onBeforeValidateSync,
     Future<bool> Function()? onBeforeValidate,
-    bool Function<T>(T data)? onAfterValidateSync,
-    Future<bool> Function<T>(T data)? onAfterValidate,
+    AfterCallBackSync? onAfterValidateSync,
+    AfterCallBack? onAfterValidate,
     void Function()? onTimeOutErrorSync,
     Future<void> Function()? onTimeOutError,
     void Function()? onErrorSync,
@@ -28,11 +28,11 @@ class JackRestApi {
       connectTimeout: connectTimeout,
     );
 
-    _onAfterValidate = onAfterValidate;
-    _onAfterValidateSync = onAfterValidateSync;
-
     _onBeforeValidate = onBeforeValidate;
     _onBeforeValidateSync = onBeforeValidateSync;
+
+    _onAfterValidateSync = onAfterValidateSync;
+    _onAfterValidate = onAfterValidate;
 
     _onTimeOutError = onTimeOutError;
     _onTimeOutErrorSync = onTimeOutErrorSync;
@@ -41,17 +41,8 @@ class JackRestApi {
     _onErrorSync = onErrorSync;
   }
 
-  bool Function()? _onBeforeValidateSync;
-  Future<bool> Function()? _onBeforeValidate;
-
-  bool Function<T>(T data)? _onAfterValidateSync;
-  Future<bool> Function<T>(T data)? _onAfterValidate;
-
-  void Function()? _onTimeOutErrorSync;
-  Future<void> Function()? _onTimeOutError;
-
-  void Function()? _onErrorSync;
-  Future<void> Function()? _onError;
+  late Dio _dio;
+  late JackApiMethods _methods;
 
   String? _token;
   String? get myToken => _token;
@@ -61,6 +52,18 @@ class JackRestApi {
       _dio.options.headers["Authorization"] = "Bearer $myToken";
     }
   }
+
+  bool Function()? _onBeforeValidateSync;
+  Future<bool> Function()? _onBeforeValidate;
+
+  AfterCallBackSync? _onAfterValidateSync;
+  AfterCallBack? _onAfterValidate;
+
+  void Function()? _onTimeOutErrorSync;
+  Future<void> Function()? _onTimeOutError;
+
+  void Function()? _onErrorSync;
+  Future<void> Function()? _onError;
 
   void _init({
     required String baseUrl,
@@ -89,9 +92,6 @@ class JackRestApi {
     );
     _methods = JackApiMethods(baseUrl: baseUrl, dio: _dio);
   }
-
-  late Dio _dio;
-  late JackApiMethods _methods;
 
   /// [method] is the method of API request
   ///
@@ -130,8 +130,8 @@ class JackRestApi {
     bool isAlreadyToken = true,
     bool Function()? onBeforeValidateSync,
     Future<bool> Function()? onBeforeValidate,
-    bool Function(T data)? onAfterValidateSync,
-    Future<bool> Function(T data)? onAfterValidate,
+    AfterCallBackSync? onAfterValidateSync,
+    AfterCallBack? onAfterValidate,
     void Function()? onTimeOutErrorSync,
     Future<void> Function()? onTimeOutError,
     void Function()? onErrorSync,
@@ -192,8 +192,8 @@ class JackRestApi {
     bool isAlreadyToken = true,
     bool Function()? onBeforeValidateSync,
     Future<bool> Function()? onBeforeValidate,
-    bool Function(T data)? onAfterValidateSync,
-    Future<bool> Function(T data)? onAfterValidate,
+    AfterCallBackSync? onAfterValidateSync,
+    AfterCallBack? onAfterValidate,
     void Function()? onTimeOutErrorSync,
     Future<void> Function()? onTimeOutError,
     void Function()? onErrorSync,
