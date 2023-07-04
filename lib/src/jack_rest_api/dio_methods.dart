@@ -93,6 +93,30 @@ class JackApiMethods {
     }
   }
 
+  Future<String?> download({
+    required String url,
+    required String savePath,
+    void Function()? onTimeOutErrorSync,
+    Future<void> Function()? onTimeOutError,
+    void Function()? onErrorSync,
+    Future<void> Function()? onError,
+  }) async {
+    try {
+      await dio.download(url, savePath);
+      return savePath;
+    } on DioException catch (e) {
+      if (e.type == DioExceptionType.connectionTimeout) {
+        await onTimeOutError?.call();
+        onTimeOutErrorSync?.call();
+      } else {
+        printError("Dio Excepition error -->");
+        await onError?.call();
+        onErrorSync?.call();
+      }
+    }
+    return null;
+  }
+
   void setConfig(
     String? basePath,
     String? contentType,
