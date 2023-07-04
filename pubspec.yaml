@@ -1,0 +1,22 @@
+name: jack_api
+description: Flutter package for api source and network on the top of Dio package
+version: 0.0.1
+homepage:
+
+environment:
+    sdk: ">=3.0.3 <4.0.0"
+    flutter: ">=1.17.0"
+
+dependencies:
+    dio: ^5.2.1+1
+    dio_http2_adapter: ^2.3.0
+    flutter:
+        sdk: flutter
+    pretty_dio_logger: ^1.3.1
+
+dev_dependencies:
+    flutter_lints: ^2.0.0
+    flutter_test:
+        sdk: flutter
+
+flutter:
