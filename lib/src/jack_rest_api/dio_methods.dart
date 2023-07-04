@@ -18,10 +18,12 @@ class JackApiMethods {
     Map<String, dynamic>? data,
     bool Function()? onBeforeValidateSync,
     Future<bool> Function()? onBeforeValidate,
-    CallBackFuncSync? onAfterValidateSync,
-    CallBackFunc? onAfterValidate,
-    void Function()? onTimeOutValidateSync,
-    Future<void> Function()? onTimeOutValidate,
+    bool Function(T data)? onAfterValidateSync,
+    Future<bool> Function(T data)? onAfterValidate,
+    void Function()? onTimeOutErrorSync,
+    Future<void> Function()? onTimeOutError,
+    void Function()? onErrorSync,
+    Future<void> Function()? onError,
   }) async {
     bool isGetMethod = false;
     // checking the query method
@@ -33,13 +35,19 @@ class JackApiMethods {
       throw "Error Throwing : You need data to send server 🥹";
     }
 
-    if (onBeforeValidate != null && !await onBeforeValidate()) {
-      printError("onBeforeValidate is false");
-      return;
+    if (onBeforeValidate != null) {
+      final before = await onBeforeValidate();
+      if (!before) {
+        printError("onBeforeValidate is false");
+        return;
+      }
     }
-    if (onBeforeValidateSync != null && !onBeforeValidateSync()) {
-      printError("onBeforeValidate is false");
-      return;
+    if (onBeforeValidateSync != null) {
+      final before = onBeforeValidateSync();
+      if (!before) {
+        printError("onBeforeValidateSync is false");
+        return;
+      }
     }
 
     // start to call api request
@@ -56,17 +64,31 @@ class JackApiMethods {
 
       final responseData = response.data as T;
 
-      onAfterValidateSync?.call(responseData);
-      await onAfterValidate?.call(responseData);
+      if (onAfterValidateSync != null) {
+        final after = onAfterValidateSync(responseData);
+        if (!after) {
+          printError("onAfterValidateSync is false");
+          return;
+        }
+      }
+
+      if (onAfterValidate != null) {
+        final after = await onAfterValidate(responseData);
+        if (!after) {
+          printError("onAfterValidate is false");
+          return;
+        }
+      }
 
       await onSuccess(responseData);
     } on DioException catch (e) {
       if (e.type == DioExceptionType.connectionTimeout) {
-        await onTimeOutValidate?.call();
-        onTimeOutValidateSync?.call();
+        await onTimeOutError?.call();
+        onTimeOutErrorSync?.call();
       } else {
-        printError(e.message ?? "Dio Excepition error -->");
-        throw "Error Throwing : Jack Rest API Get Method";
+        printError("Dio Excepition error -->");
+        await onError?.call();
+        onErrorSync?.call();
       }
     }
   }

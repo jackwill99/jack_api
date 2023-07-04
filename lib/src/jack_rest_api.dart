@@ -4,15 +4,24 @@ import "package:jack_api/src/util.dart";
 import "package:pretty_dio_logger/pretty_dio_logger.dart";
 
 class JackRestApi {
+  /// ### Config while instantiating class
+  ///
+  /// [baseUrl] is the main base url
+  ///
+  /// [connectTimeout] is in seconds of time and default is 20 seconds.
+  ///
+  ///
   JackRestApi({
     required String baseUrl,
     int? connectTimeout,
     bool Function()? onBeforeValidateSync,
     Future<bool> Function()? onBeforeValidate,
-    CallBackFuncSync? onAfterValidateSync,
-    CallBackFunc? onAfterValidate,
-    void Function()? onTimeOutValidateSync,
-    Future<void> Function()? onTimeOutValidate,
+    bool Function<T>(T data)? onAfterValidateSync,
+    Future<bool> Function<T>(T data)? onAfterValidate,
+    void Function()? onTimeOutErrorSync,
+    Future<void> Function()? onTimeOutError,
+    void Function()? onErrorSync,
+    Future<void> Function()? onError,
   }) {
     _init(
       baseUrl: baseUrl,
@@ -25,18 +34,24 @@ class JackRestApi {
     _onBeforeValidate = onBeforeValidate;
     _onBeforeValidateSync = onBeforeValidateSync;
 
-    _onTimeOutValidate = onTimeOutValidate;
-    _onTimeOutValidateSync = onTimeOutValidateSync;
+    _onTimeOutError = onTimeOutError;
+    _onTimeOutErrorSync = onTimeOutErrorSync;
+
+    _onError = onError;
+    _onErrorSync = onErrorSync;
   }
 
   bool Function()? _onBeforeValidateSync;
   Future<bool> Function()? _onBeforeValidate;
 
-  CallBackFunc? _onAfterValidate;
-  CallBackFuncSync? _onAfterValidateSync;
+  bool Function<T>(T data)? _onAfterValidateSync;
+  Future<bool> Function<T>(T data)? _onAfterValidate;
 
-  void Function()? _onTimeOutValidateSync;
-  Future<void> Function()? _onTimeOutValidate;
+  void Function()? _onTimeOutErrorSync;
+  Future<void> Function()? _onTimeOutError;
+
+  void Function()? _onErrorSync;
+  Future<void> Function()? _onError;
 
   String? _token;
   String? get myToken => _token;
@@ -93,6 +108,16 @@ class JackRestApi {
   /// [isContent] default is false. If is true, onSuccess will get the direct data of the server returned data.
   ///
   /// [isAlreadyToken] default is true, it will take the default token and throw an error when you have not default token. You should use this true after setting up the default token
+  ///
+  /// Below methods are overriding the existing methods that you created while instantiating class 😤
+  ///
+  /// [onBeforeValidate] , [onBeforeValidateSync] is to check before calling the api request eg. Checking Internet connection before request to api
+  ///
+  /// [onAfterValidate] , [onAfterValidateSync] is to check after calling the api request eg. Checking authorized or 400 error
+  ///
+  /// [onTimeOutError], [onTimeOutErrorSync] is to catch the time out error
+  ///
+  /// [onError], [onErrorSync] are to catch the error code from server
   Future<void> query<T>({
     required String method,
     required String path,
@@ -105,10 +130,12 @@ class JackRestApi {
     bool isAlreadyToken = true,
     bool Function()? onBeforeValidateSync,
     Future<bool> Function()? onBeforeValidate,
-    CallBackFuncSync? onAfterValidateSync,
-    CallBackFunc? onAfterValidate,
-    void Function()? onTimeOutValidateSync,
-    Future<void> Function()? onTimeOutValidate,
+    bool Function(T data)? onAfterValidateSync,
+    Future<bool> Function(T data)? onAfterValidate,
+    void Function()? onTimeOutErrorSync,
+    Future<void> Function()? onTimeOutError,
+    void Function()? onErrorSync,
+    Future<void> Function()? onError,
   }) async {
     _methods.setConfig(basePath, contentType);
     _checkToken(token, isAlreadyToken);
@@ -123,8 +150,10 @@ class JackRestApi {
       onBeforeValidateSync: onBeforeValidateSync ?? _onBeforeValidateSync,
       onAfterValidate: onAfterValidate ?? _onAfterValidate,
       onAfterValidateSync: onAfterValidateSync ?? _onAfterValidateSync,
-      onTimeOutValidate: onTimeOutValidate ?? _onTimeOutValidate,
-      onTimeOutValidateSync: onTimeOutValidateSync ?? _onTimeOutValidateSync,
+      onTimeOutError: onTimeOutError ?? _onTimeOutError,
+      onTimeOutErrorSync: onTimeOutErrorSync ?? _onTimeOutErrorSync,
+      onError: onError ?? _onError,
+      onErrorSync: onErrorSync ?? _onErrorSync,
     );
   }
 
@@ -141,6 +170,16 @@ class JackRestApi {
   /// [isContent] default is false. If is true, onSuccess will get the direct data of the server returned data.
   ///
   /// [isAlreadyToken] default is true, it will take the default token and throw an error when you have not default token. You should use this true after setting up the default token
+  ///
+  /// Below methods are overriding the existing methods that you created while instantiating class 😤
+  ///
+  /// [onBeforeValidate] , [onBeforeValidateSync] is to check before calling the api request eg. Checking Internet connection before request to api
+  ///
+  /// [onAfterValidate] , [onAfterValidateSync] is to check after calling the api request eg. Checking authorized or 400 error
+  ///
+  /// [onTimeOutError], [onTimeOutErrorSync] is to catch the time out error
+  ///
+  /// [onError], [onErrorSync] are to catch the error code from server
   Future<void> postWithForm<T>({
     required String method,
     required String path,
@@ -153,10 +192,12 @@ class JackRestApi {
     bool isAlreadyToken = true,
     bool Function()? onBeforeValidateSync,
     Future<bool> Function()? onBeforeValidate,
-    CallBackFuncSync? onAfterValidateSync,
-    CallBackFunc? onAfterValidate,
-    void Function()? onTimeOutValidateSync,
-    Future<void> Function()? onTimeOutValidate,
+    bool Function(T data)? onAfterValidateSync,
+    Future<bool> Function(T data)? onAfterValidate,
+    void Function()? onTimeOutErrorSync,
+    Future<void> Function()? onTimeOutError,
+    void Function()? onErrorSync,
+    Future<void> Function()? onError,
   }) async {
     if (method.toLowerCase() == "GET".toLowerCase()) {
       printError("postWithForm does not allow with GET method ❌");
@@ -191,8 +232,10 @@ class JackRestApi {
       onBeforeValidateSync: onBeforeValidateSync ?? _onBeforeValidateSync,
       onAfterValidate: onAfterValidate ?? _onAfterValidate,
       onAfterValidateSync: onAfterValidateSync ?? _onAfterValidateSync,
-      onTimeOutValidate: onTimeOutValidate ?? _onTimeOutValidate,
-      onTimeOutValidateSync: onTimeOutValidateSync ?? _onTimeOutValidateSync,
+      onTimeOutError: onTimeOutError ?? _onTimeOutError,
+      onTimeOutErrorSync: onTimeOutErrorSync ?? _onTimeOutErrorSync,
+      onError: onError ?? _onError,
+      onErrorSync: onErrorSync ?? _onErrorSync,
     );
   }
 
