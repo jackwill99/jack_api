@@ -1,5 +1,4 @@
 import "package:dio/dio.dart";
-import "package:dio_http2_adapter/dio_http2_adapter.dart";
 import "package:jack_api/src/jack_rest_api/dio_methods.dart";
 import "package:jack_api/src/util.dart";
 import "package:pretty_dio_logger/pretty_dio_logger.dart";
@@ -58,16 +57,16 @@ class JackRestApi {
     _dio = Dio(
       BaseOptions(
         baseUrl: baseUrl,
-        // connectTimeout: connectionTimeout,
+        connectTimeout: connectionTimeout,
       ),
     );
     _dio.options.headers["Content-Type"] = "application/json";
-    _dio.httpClientAdapter = Http2Adapter(
-      ConnectionManager(
-        idleTimeout: connectionTimeout,
-        onClientCreate: (_, config) => config.onBadCertificate = (_) => true,
-      ),
-    );
+    // _dio.httpClientAdapter = Http2Adapter(
+    //   ConnectionManager(
+    //     idleTimeout: connectionTimeout,
+    //     onClientCreate: (_, config) => config.onBadCertificate = (_) => true,
+    //   ),
+    // );
     _dio.interceptors.add(
       PrettyDioLogger(
         requestBody: true,
