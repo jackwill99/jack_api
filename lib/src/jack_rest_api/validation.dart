@@ -1,3 +1,4 @@
+import "package:jack_api/src/jack_rest_api/model.dart";
 import "package:jack_api/src/util.dart";
 
 Future<bool> checkBeforeValidate({

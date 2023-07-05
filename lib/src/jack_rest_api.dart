@@ -1,5 +1,6 @@
 import "package:dio/dio.dart";
 import "package:jack_api/src/jack_rest_api/dio_methods.dart";
+import "package:jack_api/src/jack_rest_api/model.dart";
 import "package:jack_api/src/util.dart";
 import "package:pretty_dio_logger/pretty_dio_logger.dart";
 

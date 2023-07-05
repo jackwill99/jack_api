@@ -1,5 +1,5 @@
 import "package:jack_api/jack_api.dart";
-import "package:jack_api/src/util.dart";
+import "package:jack_api/src/jack_rest_api/model.dart";
 
 void main() async {
   final api = JackRestApi(
@@ -18,6 +18,10 @@ void main() async {
       // 404, 500, 503, 400
     },
   );
+
+  void setTokenToDefault() {
+    api.myToken = "";
+  }
 
   await api.query<String>(
     method: "GET",
