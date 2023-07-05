@@ -230,6 +230,10 @@ class JackRestApi {
       afterValidate: afterValidate ?? AfterCallBackConfig(),
       timeOutError: timeOutError ?? CallBackConfig(),
       error: error ?? CallBackConfig(),
+      oldBeforeValidate: _onBeforeValidate,
+      oldAfterValidate: _onAfterValidate,
+      oldTimeOutError: _onTimeOutError,
+      oldError: _onError,
     );
   }
 
