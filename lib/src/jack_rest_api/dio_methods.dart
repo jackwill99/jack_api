@@ -58,11 +58,13 @@ class JackApiMethods {
 
       final responseData = response.data as T;
 
-      await checkAfterValidate<T>(
+      if (!await checkAfterValidate<T>(
         data: responseData,
         afterValidate: afterValidate,
         oldAfterValidate: oldAfterValidate,
-      );
+      )) {
+        return;
+      }
 
       await onSuccess(responseData);
     } on DioException catch (e) {

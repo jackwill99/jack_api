@@ -1,5 +1,4 @@
 import "package:jack_api/jack_api.dart";
-import "package:jack_api/src/jack_rest_api/model.dart";
 
 void main() async {
   final api = JackRestApi(
@@ -28,35 +27,49 @@ void main() async {
     path: "path",
     onSuccess: (data) async {},
 
-    // this will work both before methods
+    // No(1) beforeValidate နှစ်ခုလုံးသုံးမယ်
     beforeValidate: BeforeCallBackConfig(
       allowBoth: true,
-      // this will not affect on the allowing of default method
+      // allowBoth ကို true ပေးလိုက်လို့ isAllowDefault ကို ဘာပေးပေး အသုံးမ၀င်ဘူး
+      // allowBoth က first priority မို့
       isAllowDefault: false,
+      // နှစ်ခုလုံးသုံးမှာမို့ callBack method declare လုပ်
+      // data argument ဆိုတာ အပေါ်က onBeforeValidate က ပြန်ပေးထားတဲ့ value
       onCallBack: (data) async {
         return true;
       },
     ),
 
-    // this will not work both after methods
+    // No(2) နှစ်ခုလုံး မသုံးဘူး
     afterValidate: AfterCallBackConfig(
+      // allowBoth က default false ဖြစ်ပြီးသားမို့ မရေးတော့တာ
+      //! တကယ်က allowBoth ကို false ပေးရမှာ။ နှစ်ခုလုံး မသုံးလို့
+
+      // ပြီးရင် isAllowDefault ကို false ပေး ဘာလို့ဆို သူက default true ဖြစ်နေလို့
       isAllowDefault: false,
-      //! If you want to not work both after methods.
-      //! Don't make methods. This will be cause to allow only callBack method
+
+      //! နှစ်ခုလုံး မသုံးချင်ဘူးဆိုရင် ဒီအောက်က ရေးပြထားတဲ့ callBack method ကို လုံး၀ မရေးနဲ့ No(4) နဲ့ ညိသွားလိမ့်မယ်။ မသုံးချင်ရင် မရေးနဲ့
+      // data argument က api request success ဖြစ်လို့ ပြန်ရတဲ့ data, result argument ဆိုတာ အပေါ်က onAfterValidate က ပြန်ပေးထားတဲ့ value
       onCallBack: (data, result) async {
         return true;
       },
     ),
 
-    // this will use only default timeout method
+    // No(3) default onTimeOutError ကိုပဲ သုံးမယ်။ ဒီ query မှာလည်း timeOutError အတွက် ထပ်ရေးစရာမရှိဘူး။ အဲ့တော့ default onTimeOutError ကိုပဲ သုံးမယ်ပေါ့
     timeOutError: CallBackConfig(
-      //! will not work
+      //! ထုံးစံအတိုင်း နှစ်ခုလုံးသုံးမှာ မဟုတ်တဲ့အတွက် allowBoth က false ပေါ့။ ပြီးရင် default onTimeoutError method ကိုပဲသုံးမှာမို့ isAllowDefault ကို true ပေး။
+      // ဒီမှာက default value တွေဖြစ်နေလို့ မရေးတော့တာ
+
+      //! ဒီအခြေအနေမှာ onCallBack ရေးလည်း အသုံးမ၀င်ဘူး။ မသုံးချင် မ...?
       onCallBack: () async {},
     ),
 
-    // this will use only callback error method
+    // No(4) ခုရေးမယ့် onCallBack method ပဲ အလုပ်လုပ်မယ်။ default method အလုပ်မလုပ်စေချင်ဘူး
     error: CallBackConfig(
+      //! ထုံးစံအတိုင်း နှစ်ခုလုံးသုံးမှာ မဟုတ်တဲ့အတွက် allowBoth က false ပေါ့။ ပြီးရင် default method မသုံးတဲ့အတွက် သူ့ကို false ပေး
       isAllowDefault: false,
+
+      // ပြီးရင် callBack method ရေး
       onCallBack: () async {},
     ),
   );
