@@ -21,7 +21,7 @@ class JackApiMethods {
     required AfterCallBackConfig<T, bool?> afterValidate,
     required CallBackConfig timeOutError,
     required CallBackConfig error,
-    Map<String, dynamic>? data,
+    dynamic data,
     CallBackWithReturn? oldBeforeValidate,
     CallBack? oldAfterValidate,
     CallBackNoArgs? oldTimeOutError,
@@ -149,11 +149,11 @@ class JackApiMethods {
   Future<Response> _dioMethod({
     required String name,
     required String path,
-    Map<String, dynamic>? data,
+    dynamic data,
   }) async {
     switch (name) {
       case "GET":
-        return await dio.get(path, data: data);
+        return await dio.get(path);
       case "POST":
         return await dio.post(path, data: data);
       case "PUT":

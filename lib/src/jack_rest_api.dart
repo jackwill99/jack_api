@@ -208,10 +208,14 @@ class JackRestApi {
     if (filePaths != null) {
       for (final i in filePaths) {
         final fileName = i.split("/").last;
-        final file = await MultipartFile.fromFile(i, filename: fileName);
-        formData.files.add(
-          MapEntry(fileName, file),
-        );
+        try {
+          final file = await MultipartFile.fromFile(i, filename: fileName);
+          formData.files.add(
+            MapEntry(fileName, file),
+          );
+        } on Exception catch (_) {
+          printError("Error throwing in formData from file of $i");
+        }
       }
     }
 
@@ -224,7 +228,7 @@ class JackRestApi {
     await _methods.query<T, bool?>(
       method: method,
       path: path,
-      data: data,
+      data: formData,
       isContent: isContent,
       onSuccess: onSuccess,
       beforeValidate: beforeValidate ?? BeforeCallBackConfig(),
