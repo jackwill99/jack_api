@@ -1,4 +1,5 @@
 import "package:dio/dio.dart";
+import "package:jack_api/src/jack_rest_api/validation.dart";
 import "package:jack_api/src/util.dart";
 
 class JackApiMethods {
@@ -10,20 +11,20 @@ class JackApiMethods {
   String baseUrl;
   Dio dio;
 
-  Future<void> query<T>({
+  Future<void> query<T, R>({
     required String method,
     required String path,
     required bool isContent,
     required CallBackFunc<T> onSuccess,
+    required BeforeCallBackConfig<bool?> beforeValidate,
+    required AfterCallBackConfig<T, bool?> afterValidate,
+    required CallBackConfig timeOutError,
+    required CallBackConfig error,
     Map<String, dynamic>? data,
-    bool Function()? onBeforeValidateSync,
-    Future<bool> Function()? onBeforeValidate,
-    AfterCallBackSync<T>? onAfterValidateSync,
-    AfterCallBack<T>? onAfterValidate,
-    void Function()? onTimeOutErrorSync,
-    Future<void> Function()? onTimeOutError,
-    void Function()? onErrorSync,
-    Future<void> Function()? onError,
+    CallBackWithReturn? oldBeforeValidate,
+    CallBack? oldAfterValidate,
+    CallBackNoArgs? oldTimeOutError,
+    CallBackNoArgs? oldError,
   }) async {
     bool isGetMethod = false;
     // checking the query method
@@ -35,19 +36,11 @@ class JackApiMethods {
       throw "Error Throwing : You need data to send server 🥹";
     }
 
-    if (onBeforeValidate != null) {
-      final before = await onBeforeValidate();
-      if (!before) {
-        printError("onBeforeValidate is false");
-        return;
-      }
-    }
-    if (onBeforeValidateSync != null) {
-      final before = onBeforeValidateSync();
-      if (!before) {
-        printError("onBeforeValidateSync is false");
-        return;
-      }
+    if (!await checkBeforeValidate(
+      beforeValidate: beforeValidate,
+      oldBeforeValidate: oldBeforeValidate,
+    )) {
+      return;
     }
 
     // start to call api request
@@ -64,31 +57,22 @@ class JackApiMethods {
 
       final responseData = response.data as T;
 
-      if (onAfterValidateSync != null) {
-        final after = onAfterValidateSync(responseData);
-        if (!after) {
-          printError("onAfterValidateSync is false");
-          return;
-        }
-      }
-
-      if (onAfterValidate != null) {
-        final after = await onAfterValidate(responseData);
-        if (!after) {
-          printError("onAfterValidate is false");
-          return;
-        }
-      }
+      await checkAfterValidate<T>(
+        data: responseData,
+        afterValidate: afterValidate,
+        oldAfterValidate: oldAfterValidate,
+      );
 
       await onSuccess(responseData);
     } on DioException catch (e) {
       if (e.type == DioExceptionType.connectionTimeout) {
-        await onTimeOutError?.call();
-        onTimeOutErrorSync?.call();
+        await checkTimeOut(
+          timeOutError: timeOutError,
+          oldTimeOutError: oldTimeOutError,
+        );
       } else {
         printError("Dio Excepition error -->");
-        await onError?.call();
-        onErrorSync?.call();
+        await checkError(error: error, oldError: oldError);
       }
     }
   }

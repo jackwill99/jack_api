@@ -14,13 +14,9 @@ class JackRestApi {
   JackRestApi({
     required String baseUrl,
     int? connectTimeout,
-    bool Function()? onBeforeValidateSync,
     Future<bool> Function()? onBeforeValidate,
-    AfterCallBackSync? onAfterValidateSync,
-    AfterCallBack? onAfterValidate,
-    void Function()? onTimeOutErrorSync,
+    CallBack? onAfterValidate,
     Future<void> Function()? onTimeOutError,
-    void Function()? onErrorSync,
     Future<void> Function()? onError,
   }) {
     _init(
@@ -29,16 +25,12 @@ class JackRestApi {
     );
 
     _onBeforeValidate = onBeforeValidate;
-    _onBeforeValidateSync = onBeforeValidateSync;
 
-    _onAfterValidateSync = onAfterValidateSync;
     _onAfterValidate = onAfterValidate;
 
     _onTimeOutError = onTimeOutError;
-    _onTimeOutErrorSync = onTimeOutErrorSync;
 
     _onError = onError;
-    _onErrorSync = onErrorSync;
   }
 
   late Dio _dio;
@@ -53,17 +45,13 @@ class JackRestApi {
     }
   }
 
-  bool Function()? _onBeforeValidateSync;
-  Future<bool> Function()? _onBeforeValidate;
+  CallBackWithReturn? _onBeforeValidate;
 
-  AfterCallBackSync? _onAfterValidateSync;
-  AfterCallBack? _onAfterValidate;
+  CallBack? _onAfterValidate;
 
-  void Function()? _onTimeOutErrorSync;
-  Future<void> Function()? _onTimeOutError;
+  CallBackNoArgs? _onTimeOutError;
 
-  void Function()? _onErrorSync;
-  Future<void> Function()? _onError;
+  CallBackNoArgs? _onError;
 
   void _init({
     required String baseUrl,
@@ -111,22 +99,22 @@ class JackRestApi {
   ///
   /// Below methods are overriding the existing methods that you created while instantiating class 😤
   ///
-  /// [onBeforeValidate] , [onBeforeValidateSync] is to check before calling the api request eg. Checking Internet connection before request to api
-  ///
-  /// [isDefaultBeforeValidate] default is true that means when you does not declare above two methods, default method (i.e in the instantiated class) will be use
-  ///
-  /// [onAfterValidate] , [onAfterValidateSync] is to check after calling the api request eg. Checking authorized or 400 error
-  ///
-  /// [isDefaultAfterValidate] default is true that means when you does not declare above two methods, default method (i.e in the instantiated class) will be use
-  ///
-  /// [onTimeOutError], [onTimeOutErrorSync] is to catch the time out error
-  ///
-  /// [isDefaultTimeOutError] default is true that means when you does not declare above two methods, default method (i.e in the instantiated class) will be use
-  ///
-  /// [onError], [onErrorSync] are to catch the error code from server
-  ///
-  /// [isDefaultError] default is true that means when you does not declare above two methods, default method (i.e in the instantiated class) will be use
-  ///
+  // / [onBeforeValidate] , [onBeforeValidateSync] is to check before calling the api request eg. Checking Internet connection before request to api
+  // /
+  // / [isDefaultBeforeValidate] default is true that means when you does not declare above two methods, default method (i.e in the instantiated class) will be use
+  // /
+  // / [onAfterValidate] , [onAfterValidateSync] is to check after calling the api request eg. Checking authorized or 400 error
+  // /
+  // / [isDefaultAfterValidate] default is true that means when you does not declare above two methods, default method (i.e in the instantiated class) will be use
+  // /
+  // / [onTimeOutError], [onTimeOutErrorSync] is to catch the time out error
+  // /
+  // / [isDefaultTimeOutError] default is true that means when you does not declare above two methods, default method (i.e in the instantiated class) will be use
+  // /
+  // / [onError], [onErrorSync] are to catch the error code from server
+  // /
+  // / [isDefaultError] default is true that means when you does not declare above two methods, default method (i.e in the instantiated class) will be use
+  // /
   Future<void> query<T>({
     required String method,
     required String path,
@@ -137,46 +125,28 @@ class JackRestApi {
     String? token,
     bool isContent = false,
     bool isAlreadyToken = true,
-    bool Function()? onBeforeValidateSync,
-    Future<bool> Function()? onBeforeValidate,
-    bool isDefaultBeforeValidate = true,
-    AfterCallBackSync? onAfterValidateSync,
-    AfterCallBack? onAfterValidate,
-    bool isDefaultAfterValidate = true,
-    void Function()? onTimeOutErrorSync,
-    Future<void> Function()? onTimeOutError,
-    bool isDefaultTimeOutError = true,
-    void Function()? onErrorSync,
-    Future<void> Function()? onError,
-    bool isDefaultError = true,
+    BeforeCallBackConfig<bool?>? beforeValidate,
+    AfterCallBackConfig<T, bool?>? afterValidate,
+    CallBackConfig? timeOutError,
+    CallBackConfig? error,
   }) async {
     _methods.setConfig(basePath, contentType);
     _checkToken(token, isAlreadyToken);
 
-    await _methods.query<T>(
+    await _methods.query<T, bool?>(
       method: method,
       path: path,
       data: data,
       isContent: isContent,
       onSuccess: onSuccess,
-      onBeforeValidate: isDefaultBeforeValidate
-          ? onBeforeValidate ?? _onBeforeValidate
-          : null,
-      onBeforeValidateSync: isDefaultBeforeValidate
-          ? onBeforeValidateSync ?? _onBeforeValidateSync
-          : null,
-      onAfterValidate:
-          isDefaultAfterValidate ? onAfterValidate ?? _onAfterValidate : null,
-      onAfterValidateSync: isDefaultAfterValidate
-          ? onAfterValidateSync ?? _onAfterValidateSync
-          : null,
-      onTimeOutError:
-          isDefaultTimeOutError ? onTimeOutError ?? _onTimeOutError : null,
-      onTimeOutErrorSync: isDefaultTimeOutError
-          ? onTimeOutErrorSync ?? _onTimeOutErrorSync
-          : null,
-      onError: isDefaultError ? onError ?? _onError : null,
-      onErrorSync: isDefaultError ? onErrorSync ?? _onErrorSync : null,
+      beforeValidate: beforeValidate ?? BeforeCallBackConfig(),
+      afterValidate: afterValidate ?? AfterCallBackConfig(),
+      timeOutError: timeOutError ?? CallBackConfig(),
+      error: error ?? CallBackConfig(),
+      oldBeforeValidate: _onBeforeValidate,
+      oldAfterValidate: _onAfterValidate,
+      oldTimeOutError: _onTimeOutError,
+      oldError: _onError,
     );
   }
 
@@ -196,22 +166,22 @@ class JackRestApi {
   ///
   /// Below methods are overriding the existing methods that you created while instantiating class 😤
   ///
-  /// [onBeforeValidate] , [onBeforeValidateSync] is to check before calling the api request eg. Checking Internet connection before request to api
-  ///
-  /// [isDefaultBeforeValidate] default is true that means when you does not declare above two methods, default method (i.e in the instantiated class) will be use
-  ///
-  /// [onAfterValidate] , [onAfterValidateSync] is to check after calling the api request eg. Checking authorized or 400 error
-  ///
-  /// [isDefaultAfterValidate] default is true that means when you does not declare above two methods, default method (i.e in the instantiated class) will be use
-  ///
-  /// [onTimeOutError], [onTimeOutErrorSync] is to catch the time out error
-  ///
-  /// [isDefaultTimeOutError] default is true that means when you does not declare above two methods, default method (i.e in the instantiated class) will be use
-  ///
-  /// [onError], [onErrorSync] are to catch the error code from server
-  ///
-  /// [isDefaultError] default is true that means when you does not declare above two methods, default method (i.e in the instantiated class) will be use
-  ///
+  // / [onBeforeValidate] , [onBeforeValidateSync] is to check before calling the api request eg. Checking Internet connection before request to api
+  // /
+  // / [isDefaultBeforeValidate] default is true that means when you does not declare above two methods, default method (i.e in the instantiated class) will be use
+  // /
+  // / [onAfterValidate] , [onAfterValidateSync] is to check after calling the api request eg. Checking authorized or 400 error
+  // /
+  // / [isDefaultAfterValidate] default is true that means when you does not declare above two methods, default method (i.e in the instantiated class) will be use
+  // /
+  // / [onTimeOutError], [onTimeOutErrorSync] is to catch the time out error
+  // /
+  // / [isDefaultTimeOutError] default is true that means when you does not declare above two methods, default method (i.e in the instantiated class) will be use
+  // /
+  // / [onError], [onErrorSync] are to catch the error code from server
+  // /
+  // / [isDefaultError] default is true that means when you does not declare above two methods, default method (i.e in the instantiated class) will be use
+  // /
   Future<void> postWithForm<T>({
     required String method,
     required String path,
@@ -222,18 +192,10 @@ class JackRestApi {
     String? token,
     bool isContent = false,
     bool isAlreadyToken = true,
-    bool Function()? onBeforeValidateSync,
-    Future<bool> Function()? onBeforeValidate,
-    bool isDefaultBeforeValidate = true,
-    AfterCallBackSync? onAfterValidateSync,
-    AfterCallBack? onAfterValidate,
-    bool isDefaultAfterValidate = true,
-    void Function()? onTimeOutErrorSync,
-    Future<void> Function()? onTimeOutError,
-    bool isDefaultTimeOutError = true,
-    void Function()? onErrorSync,
-    Future<void> Function()? onError,
-    bool isDefaultError = true,
+    BeforeCallBackConfig<bool?>? beforeValidate,
+    AfterCallBackConfig<T, bool?>? afterValidate,
+    CallBackConfig? timeOutError,
+    CallBackConfig? error,
   }) async {
     if (method.toLowerCase() == "GET".toLowerCase()) {
       printError("postWithForm does not allow with GET method ❌");
@@ -258,30 +220,16 @@ class JackRestApi {
     );
     _checkToken(token, isAlreadyToken);
 
-    await _methods.query<T>(
+    await _methods.query<T, bool?>(
       method: method,
       path: path,
       data: data,
       isContent: isContent,
       onSuccess: onSuccess,
-      onBeforeValidate: isDefaultBeforeValidate
-          ? onBeforeValidate ?? _onBeforeValidate
-          : null,
-      onBeforeValidateSync: isDefaultBeforeValidate
-          ? onBeforeValidateSync ?? _onBeforeValidateSync
-          : null,
-      onAfterValidate:
-          isDefaultAfterValidate ? onAfterValidate ?? _onAfterValidate : null,
-      onAfterValidateSync: isDefaultAfterValidate
-          ? onAfterValidateSync ?? _onAfterValidateSync
-          : null,
-      onTimeOutError:
-          isDefaultTimeOutError ? onTimeOutError ?? _onTimeOutError : null,
-      onTimeOutErrorSync: isDefaultTimeOutError
-          ? onTimeOutErrorSync ?? _onTimeOutErrorSync
-          : null,
-      onError: isDefaultError ? onError ?? _onError : null,
-      onErrorSync: isDefaultError ? onErrorSync ?? _onErrorSync : null,
+      beforeValidate: beforeValidate ?? BeforeCallBackConfig(),
+      afterValidate: afterValidate ?? AfterCallBackConfig(),
+      timeOutError: timeOutError ?? CallBackConfig(),
+      error: error ?? CallBackConfig(),
     );
   }
 
@@ -312,11 +260,7 @@ class JackRestApi {
       savePath: savePath,
       onTimeOutError:
           isDefaultTimeOutError ? onTimeOutError ?? _onTimeOutError : null,
-      onTimeOutErrorSync: isDefaultTimeOutError
-          ? onTimeOutErrorSync ?? _onTimeOutErrorSync
-          : null,
       onError: isDefaultError ? onError ?? _onError : null,
-      onErrorSync: isDefaultError ? onErrorSync ?? _onErrorSync : null,
     );
   }
 
