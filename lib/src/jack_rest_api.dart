@@ -206,7 +206,7 @@ class JackRestApi {
     required String path,
     required Map<String, dynamic> data,
     required CallBackFunc<T> onSuccess,
-    required JackApiCacheOptions cacheOptions,
+    JackApiCacheOptions? cacheOptions,
     String? basePath,
     List<String>? filePaths,
     String? token,
