@@ -1,4 +1,5 @@
 import "package:dio/dio.dart";
+import "package:jack_api/src/cache/cache_options.dart";
 import "package:jack_api/src/jack_rest_api/model.dart";
 import "package:jack_api/src/jack_rest_api/validation.dart";
 import "package:jack_api/src/util.dart";
@@ -21,6 +22,7 @@ class JackApiMethods {
     required AfterCallBackConfig<T, bool?> afterValidate,
     required CallBackConfig timeOutError,
     required CallBackConfig error,
+    required Map<String, dynamic> extra,
     dynamic data,
     CallBackWithReturn? oldBeforeValidate,
     CallBack? oldAfterValidate,
@@ -49,6 +51,7 @@ class JackApiMethods {
       final Response response = await _dioMethod(
         name: method,
         path: path,
+        extra: extra,
         data: isGetMethod ? null : data,
       );
 
@@ -104,6 +107,22 @@ class JackApiMethods {
     return null;
   }
 
+  Map<String, dynamic> setUpCacheOption(JackApiCacheOptions? value) {
+    final options = <String, dynamic>{};
+    if (value == null) {
+      options["enableCache"] = false;
+    } else {
+      options["enableCache"] = true;
+      options["isForceRefresh"] = value.isForceRefresh;
+      options["allowPostMethod"] = value.allowPostMethod;
+      options["isImage"] = value.isImage;
+      options["schemaName"] = value.schemaName;
+      options["duration"] = value.duration;
+    }
+
+    return options;
+  }
+
   void setConfig(
     String? basePath,
     String? contentType,
@@ -149,15 +168,30 @@ class JackApiMethods {
   Future<Response> _dioMethod({
     required String name,
     required String path,
+    required Map<String, dynamic> extra,
     dynamic data,
   }) async {
+    final options = Options().copyWith(
+      extra: extra,
+    );
     switch (name) {
       case "GET":
-        return await dio.get(path);
+        return await dio.get(
+          path,
+          options: options,
+        );
       case "POST":
-        return await dio.post(path, data: data);
+        return await dio.post(
+          path,
+          data: data,
+          options: options,
+        );
       case "PUT":
-        return await dio.put(path, data: data);
+        return await dio.put(
+          path,
+          data: data,
+          options: options,
+        );
       default:
         throw "Error Throwing : API method does not correct. Use all capital letter";
     }

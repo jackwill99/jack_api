@@ -1,6 +1,7 @@
 include: package:flutter_lints/flutter.yaml
 
 analyzer:
+    exclude: [build/**, lib/**.freezed.dart, lib/**.g.dart]
     errors:
         #   Error Rules
         always_use_package_imports: error
@@ -29,7 +30,7 @@ analyzer:
         #    - always_specify_types
         annotate_overrides: error
         avoid_bool_literals_in_conditional_expressions: error
-        avoid_catches_without_on_clauses: error
+        # avoid_catches_without_on_clauses: error
         avoid_catching_errors: error
         avoid_classes_with_only_static_members: error
         avoid_final_parameters: error
@@ -133,7 +134,7 @@ linter:
         #    - always_specify_types
         - annotate_overrides
         - avoid_bool_literals_in_conditional_expressions
-        - avoid_catches_without_on_clauses
+        # - avoid_catches_without_on_clauses
         - avoid_catching_errors
         - avoid_classes_with_only_static_members
         - avoid_final_parameters

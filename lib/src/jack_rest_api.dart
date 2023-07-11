@@ -1,4 +1,8 @@
 import "package:dio/dio.dart";
+import "package:dio_http2_adapter/dio_http2_adapter.dart";
+import "package:flutter/foundation.dart";
+import "package:jack_api/src/cache/cache_interceptor.dart";
+import "package:jack_api/src/cache/cache_options.dart";
 import "package:jack_api/src/jack_rest_api/dio_methods.dart";
 import "package:jack_api/src/jack_rest_api/model.dart";
 import "package:jack_api/src/util.dart";
@@ -19,11 +23,14 @@ class JackRestApi {
     CallBack? onAfterValidate,
     Future<void> Function()? onTimeOutError,
     Future<void> Function()? onError,
+    bool useHttp2 = false,
   }) {
     _init(
       baseUrl: baseUrl,
       connectTimeout: connectTimeout,
     );
+
+    RestApiData.isUseHttp2 = useHttp2;
 
     _onBeforeValidate = onBeforeValidate;
 
@@ -34,16 +41,16 @@ class JackRestApi {
     _onError = onError;
   }
 
-  late Dio _dio;
-  late JackApiMethods _methods;
-
-  String? _token;
-  String? get myToken => _token;
+  String? get myToken => RestApiData.token;
   set myToken(String? value) {
-    _token = value;
+    RestApiData.token = value;
     if (value != null) {
-      _dio.options.headers["Authorization"] = "Bearer $myToken";
+      RestApiData.dio.options.headers["Authorization"] = "Bearer $myToken";
     }
+  }
+
+  void setIsOnline({bool? value}) {
+    RestApiData.isOnline = value;
   }
 
   CallBackWithReturn? _onBeforeValidate;
@@ -61,25 +68,33 @@ class JackRestApi {
     final connectionTimeout = connectTimeout == null
         ? const Duration(seconds: 20)
         : Duration(seconds: connectTimeout);
-    _dio = Dio(
+    RestApiData.dio = Dio(
       BaseOptions(
         baseUrl: baseUrl,
         connectTimeout: connectionTimeout,
       ),
+    )..options.headers["Content-Type"] = "application/json";
+    if (RestApiData.isUseHttp2) {
+      RestApiData.dio.httpClientAdapter = Http2Adapter(
+        ConnectionManager(
+          idleTimeout: connectionTimeout,
+          onClientCreate: (_, config) => config.onBadCertificate = (_) => true,
+        ),
+      );
+    }
+
+    if (!kReleaseMode) {
+      RestApiData.dio.interceptors.add(
+        PrettyDioLogger(
+          requestBody: true,
+        ),
+      );
+    }
+    RestApiData.dio.interceptors.add(
+      CacheInterceptor(),
     );
-    _dio.options.headers["Content-Type"] = "application/json";
-    // _dio.httpClientAdapter = Http2Adapter(
-    //   ConnectionManager(
-    //     idleTimeout: connectionTimeout,
-    //     onClientCreate: (_, config) => config.onBadCertificate = (_) => true,
-    //   ),
-    // );
-    _dio.interceptors.add(
-      PrettyDioLogger(
-        requestBody: true,
-      ),
-    );
-    _methods = JackApiMethods(baseUrl: baseUrl, dio: _dio);
+    RestApiData.methods =
+        JackApiMethods(baseUrl: baseUrl, dio: RestApiData.dio);
   }
 
   /// [method] is the method of API request
@@ -126,15 +141,17 @@ class JackRestApi {
     String? token,
     bool isContent = false,
     bool isAlreadyToken = true,
+    JackApiCacheOptions? cacheOptions,
     BeforeCallBackConfig<bool?>? beforeValidate,
     AfterCallBackConfig<T, bool?>? afterValidate,
     CallBackConfig? timeOutError,
     CallBackConfig? error,
   }) async {
-    _methods.setConfig(basePath, contentType);
+    RestApiData.methods.setConfig(basePath, contentType);
     _checkToken(token, isAlreadyToken);
+    final extra = RestApiData.methods.setUpCacheOption(cacheOptions);
 
-    await _methods.query<T, bool?>(
+    await RestApiData.methods.query<T, bool?>(
       method: method,
       path: path,
       data: data,
@@ -144,6 +161,7 @@ class JackRestApi {
       afterValidate: afterValidate ?? AfterCallBackConfig(),
       timeOutError: timeOutError ?? CallBackConfig(),
       error: error ?? CallBackConfig(),
+      extra: extra,
       oldBeforeValidate: _onBeforeValidate,
       oldAfterValidate: _onAfterValidate,
       oldTimeOutError: _onTimeOutError,
@@ -188,6 +206,7 @@ class JackRestApi {
     required String path,
     required Map<String, dynamic> data,
     required CallBackFunc<T> onSuccess,
+    required JackApiCacheOptions cacheOptions,
     String? basePath,
     List<String>? filePaths,
     String? token,
@@ -219,13 +238,14 @@ class JackRestApi {
       }
     }
 
-    _methods.setConfig(
+    RestApiData.methods.setConfig(
       basePath,
       "multipart/form-data ; boundary=${formData.boundary}",
     );
     _checkToken(token, isAlreadyToken);
+    final extra = RestApiData.methods.setUpCacheOption(cacheOptions);
 
-    await _methods.query<T, bool?>(
+    await RestApiData.methods.query<T, bool?>(
       method: method,
       path: path,
       data: formData,
@@ -235,6 +255,7 @@ class JackRestApi {
       afterValidate: afterValidate ?? AfterCallBackConfig(),
       timeOutError: timeOutError ?? CallBackConfig(),
       error: error ?? CallBackConfig(),
+      extra: extra,
       oldBeforeValidate: _onBeforeValidate,
       oldAfterValidate: _onAfterValidate,
       oldTimeOutError: _onTimeOutError,
@@ -264,7 +285,7 @@ class JackRestApi {
     Future<void> Function()? onError,
     bool isDefaultError = true,
   }) async {
-    return await _methods.download(
+    return await RestApiData.methods.download(
       url: url,
       savePath: savePath,
       onTimeOutError:
@@ -277,7 +298,7 @@ class JackRestApi {
     String? token,
     bool isAlreadyToken,
   ) {
-    _methods.checkToken(
+    RestApiData.methods.checkToken(
       myToken,
       token,
       isAlreadyToken: isAlreadyToken,
