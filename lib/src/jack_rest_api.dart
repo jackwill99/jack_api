@@ -1,8 +1,12 @@
+import "dart:async";
+
 import "package:dio/dio.dart";
 import "package:dio_http2_adapter/dio_http2_adapter.dart";
 import "package:flutter/foundation.dart";
+import "package:get_it/get_it.dart";
 import "package:jack_api/src/cache/cache_interceptor.dart";
 import "package:jack_api/src/cache/cache_options.dart";
+import "package:jack_api/src/cache/isar_service.dart";
 import "package:jack_api/src/jack_rest_api/dio_methods.dart";
 import "package:jack_api/src/jack_rest_api/model.dart";
 import "package:jack_api/src/util.dart";
@@ -25,12 +29,14 @@ class JackRestApi {
     Future<void> Function()? onError,
     bool useHttp2 = false,
   }) {
+    RestApiData.isUseHttp2 = useHttp2;
+
     _init(
       baseUrl: baseUrl,
       connectTimeout: connectTimeout,
     );
 
-    RestApiData.isUseHttp2 = useHttp2;
+    unawaited(GetIt.I.registerSingleton(IsarService()).initialize());
 
     _onBeforeValidate = onBeforeValidate;
 

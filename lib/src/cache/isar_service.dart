@@ -3,17 +3,16 @@ import "package:jack_api/src/cache/cache_model.dart";
 import "package:path_provider/path_provider.dart";
 
 class IsarService {
-  IsarService._();
+  Isar? _isar;
 
-  static late Isar _isar;
-
-  static Future<void> initialize() async {
+  Future<void> initialize({String instanceName = "jack_will"}) async {
     final dir = await getApplicationDocumentsDirectory();
     _isar = await Isar.open(
       [ApiCacheSchema],
       directory: dir.path,
+      name: instanceName,
     );
   }
 
-  static Isar get isar => _isar;
+  Isar get isar => _isar!;
 }

@@ -14,7 +14,7 @@ class CacheInterceptor extends Interceptor {
   ) async {
     final extra = options.extra;
 
-    if (RestApiData.isOnline != null && RestApiData.isOnline!) {
+    if (RestApiData.isOnline == null || RestApiData.isOnline!) {
       /// Situation of caching
       /// - enable cache (and)
       /// - not isForceRefresh (and)

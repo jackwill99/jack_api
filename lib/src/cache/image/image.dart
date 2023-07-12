@@ -8,9 +8,13 @@ import "package:jack_api/jack_api.dart";
 /// Production implementation should use stream instead
 /// to avoid OOM problems & improve performance
 class JackCacheImage extends ImageProvider<JackCacheImage> {
-  const JackCacheImage({required this.url});
+  const JackCacheImage({
+    required this.url,
+    this.duration = const Duration(days: 5),
+  });
 
   final String url;
+  final Duration duration;
 
   @override
   bool operator ==(Object other) {
@@ -49,10 +53,17 @@ class JackCacheImage extends ImageProvider<JackCacheImage> {
   String toString() => "$JackCacheImage $url";
 
   Future<Codec> _loadAsync(ImageDecoderCallback decode) async {
-    // TODO(jackwill): add isImage in extra for cache store
     final response = await RestApiData.dio.get(
       url,
-      options: Options(responseType: ResponseType.bytes),
+      options: Options(
+        responseType: ResponseType.bytes,
+        extra: {
+          "enableCache": true,
+          "isImage": true,
+          "schemaName": "",
+          "duration": duration,
+        },
+      ),
     );
 
     late Uint8List? bytes;
