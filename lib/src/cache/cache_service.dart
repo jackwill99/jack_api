@@ -47,11 +47,11 @@ class CacheService {
       ),
     );
 
-    debugPrint("\x1B[34m ╔╣  $schemaName \x1B[0m");
+    debugPrint("\x1B[35m ╔╣  $schemaName \x1B[0m");
     debugPrint(
-      "\x1B[34m ║   Cached successfully, Happy api query saving 😎 ✅ \x1B[0m",
+      "\x1B[35m ║   Cached successfully, Happy api query saving 😎 ✅ \x1B[0m",
     );
-    debugPrint("\x1B[34m ╚   \x1B[0m");
+    debugPrint("\x1B[35m ╚   \x1B[0m");
   }
 
   static Future<ApiCache?> get({
@@ -98,7 +98,7 @@ class CacheService {
     /// Cache will delete when device is connected with internet and cache data is expire
     if ((RestApiData.isOnline == null || RestApiData.isOnline!) &&
         DateTime.now().isAfter(cache.expires)) {
-      await isar.writeTxn(() async => await isar.apiCaches.deleteByKey(key));
+      await deleteCache(key);
       return null;
     }
 
@@ -110,6 +110,50 @@ class CacheService {
     debugPrint("╚  ");
 
     return cache;
+  }
+
+  static Future<void> deleteCache(String key) async {
+    final isar = GetIt.instance<IsarService>().isar;
+    await isar.writeTxn(() async => await isar.apiCaches.deleteByKey(key));
+  }
+
+  static Future<void> searchAndDelete(
+    String key,
+    dynamic postData,
+  ) async {
+    final isar = GetIt.instance<IsarService>().isar;
+
+    if (postData != null) {
+      await isar.writeTxn<int>(
+        () async => await isar.apiCaches.filter().keyEqualTo(key).deleteAll(),
+      );
+    } else {
+      final hash = await Sha256().hash(utf8.encode(postData.toString()));
+      await isar.apiCaches
+          .filter()
+          .keyEqualTo(key)
+          .and()
+          .bodyHashIsNotNull()
+          .and()
+          .bodyHashEqualTo(hash.hashCode)
+          .deleteAll();
+    }
+
+    debugPrint("\x1B[35m ╔╣   \x1B[0m");
+    debugPrint(
+      "\x1B[35m ║   You force me to delete cache for this api 🤷‍♂️. So, deleted successfully 🦂 \x1B[0m",
+    );
+    debugPrint("\x1B[35m ╚   \x1B[0m");
+  }
+
+  static Future<void> resetDb() async {
+    final isar = GetIt.instance<IsarService>().isar;
+    await isar.clear();
+    debugPrint("\x1B[30;1m ╔╣   Resetting The ApiCache Database \x1B[0m");
+    debugPrint(
+      "\x1B[30;1m ║   Successfully deleted all of the api cache data from your system. Feel free to cache 🛸 ✅ \x1B[0m",
+    );
+    debugPrint("\x1B[30;1m ╚   \x1B[0m");
   }
 
   static Future<void> _removeExpiredData(String schemaName) async {

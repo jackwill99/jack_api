@@ -1,3 +1,4 @@
+import "dart:async";
 import "dart:convert";
 
 import "package:dio/dio.dart";
@@ -13,6 +14,10 @@ class CacheInterceptor extends Interceptor {
     RequestInterceptorHandler handler,
   ) async {
     final extra = options.extra;
+    final postDataOptions =
+        (options.method != "GET" && (extra["allowPostMethod"] as bool))
+            ? options.data
+            : null;
 
     if (RestApiData.isOnline == null || RestApiData.isOnline!) {
       /// Situation of caching
@@ -23,6 +28,12 @@ class CacheInterceptor extends Interceptor {
       if (!(extra["enableCache"] as bool) ||
           (extra["isForceRefresh"] as bool) ||
           (options.method != "GET" && !(extra["allowPostMethod"] as bool))) {
+        unawaited(
+          CacheService.searchAndDelete(
+            options.uri.toString(),
+            postDataOptions,
+          ),
+        );
         handler.next(options);
         return;
       }
@@ -32,9 +43,7 @@ class CacheInterceptor extends Interceptor {
       key: options.uri.toString(),
       schemaName: extra["schemaName"],
       isImage: extra["isImage"],
-      postData: (options.method != "GET" && (extra["allowPostMethod"] as bool))
-          ? options.data
-          : null,
+      postData: postDataOptions,
     );
     if (cache == null) {
       handler.next(options);

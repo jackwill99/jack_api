@@ -6,6 +6,7 @@ import "package:flutter/foundation.dart";
 import "package:get_it/get_it.dart";
 import "package:jack_api/src/cache/cache_interceptor.dart";
 import "package:jack_api/src/cache/cache_options.dart";
+import "package:jack_api/src/cache/cache_service.dart";
 import "package:jack_api/src/cache/isar_service.dart";
 import "package:jack_api/src/jack_rest_api/dio_methods.dart";
 import "package:jack_api/src/jack_rest_api/model.dart";
@@ -267,6 +268,10 @@ class JackRestApi {
       oldTimeOutError: _onTimeOutError,
       oldError: _onError,
     );
+  }
+
+  Future<void> resetCache() async {
+    await CacheService.resetDb();
   }
 
   /// [url] is the fully https url link to download media
