@@ -32,6 +32,9 @@ class CacheInterceptor extends Interceptor {
       key: options.uri.toString(),
       schemaName: extra["schemaName"],
       isImage: extra["isImage"],
+      postData: (options.method != "GET" && (extra["allowPostMethod"] as bool))
+          ? options.data
+          : null,
     );
     if (cache == null) {
       handler.next(options);
@@ -71,6 +74,10 @@ class CacheInterceptor extends Interceptor {
       response,
       extra["schemaName"],
       extra["duration"],
+      (response.requestOptions.method != "GET" &&
+              (extra["allowPostMethod"] as bool))
+          ? response.requestOptions.data
+          : null,
     );
     handler.next(response);
   }

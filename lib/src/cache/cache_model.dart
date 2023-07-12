@@ -10,7 +10,7 @@ class ApiCache {
   @Index()
   late String schemeName;
   @Index()
-  String? postData;
+  int? bodyHash;
   String? data;
   late String headers;
   int? statusCode;

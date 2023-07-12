@@ -1,6 +1,7 @@
 import "dart:async";
 import "dart:convert";
 import "dart:isolate";
+import "package:cryptography/cryptography.dart";
 import "package:dio/dio.dart";
 import "package:flutter/foundation.dart";
 import "package:flutter/services.dart";
@@ -22,13 +23,20 @@ class CacheService {
     Response response,
     String schemaName,
     Duration expires,
+    dynamic postData,
   ) async {
     final isar = GetIt.instance<IsarService>().isar;
+    int? hash;
+    if (postData != null) {
+      final sha = await Sha256().hash(utf8.encode(postData.toString()));
+      hash = sha.hashCode;
+    }
 
     await isar.writeTxn(
       () async => isar.apiCaches.putByKey(
         ApiCache()
           ..key = response.requestOptions.uri.toString()
+          ..bodyHash = hash
           ..data = jsonEncode(response.data)
           ..expires = DateTime.now().add(expires)
           ..statusCode = response.statusCode
@@ -38,12 +46,19 @@ class CacheService {
           ..schemeName = schemaName,
       ),
     );
+
+    debugPrint("\x1B[34m ╔╣  $schemaName \x1B[0m");
+    debugPrint(
+      "\x1B[34m ║   Cached successfully, Happy api query saving 😎 ✅ \x1B[0m",
+    );
+    debugPrint("\x1B[34m ╚   \x1B[0m");
   }
 
   static Future<ApiCache?> get({
     required String key,
     required String schemaName,
     bool isImage = false,
+    dynamic postData,
   }) async {
     final isar = GetIt.instance<IsarService>().isar;
 
@@ -59,7 +74,23 @@ class CacheService {
       schemaList.add(schemaName);
     }
 
-    final cache = await isar.apiCaches.getByKey(key);
+    ApiCache? cache;
+
+    if (postData != null) {
+      final hash = await Sha256().hash(utf8.encode(postData.toString()));
+
+      cache = await isar.apiCaches
+          .filter()
+          .keyEqualTo(key)
+          .and()
+          .bodyHashIsNotNull()
+          .and()
+          .bodyHashEqualTo(hash.hashCode)
+          .findFirst();
+    } else {
+      cache = await isar.apiCaches.getByKey(key);
+    }
+
     if (cache == null) {
       return null;
     }
@@ -71,12 +102,13 @@ class CacheService {
       return null;
     }
 
-    debugPrint("╔╣  Jack Api Cache 🚀 👨🏻‍💻");
-    debugPrint("║   This data comes from api cache. (302)");
+    debugPrint("╔╣  Jack Api Cache 🚀 👨🏻‍💻 ");
+    debugPrint("║   This data comes from api cache. Http Status Code (302)");
     debugPrint(
       "║\x1B[31m   If you need to re-fresh the data, set isForceRefresh to true or delete api schema 🫡 \x1B[0m",
     );
     debugPrint("╚  ");
+
     return cache;
   }
 
@@ -133,9 +165,11 @@ class CacheService {
           .expiresLessThan(DateTime.now())
           .deleteAll();
 
-      debugPrint("\x1B[31m ╔╣  Deleted expired data of ${args[2]} \x1B[0m");
-      debugPrint("\x1B[31m ║   $count , Happy memory saving 😎 ✅ \x1B[0m");
-      debugPrint("\x1B[31m ╚   \x1B[0m");
+      debugPrint("\x1B[31m ╔╣  ${args[2]} \x1B[0m");
+      debugPrint(
+        " ║   Deleted expired data of $count , Happy memory saving 😎 ✅ \x1B[0m",
+      );
+      debugPrint(" ╚   \x1B[0m");
     });
 
     GetIt.I.unregister<IsarService>(instanceName: "isolateIsar");

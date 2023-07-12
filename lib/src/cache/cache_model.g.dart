@@ -17,29 +17,29 @@ const ApiCacheSchema = CollectionSchema(
   name: r'ApiCache',
   id: -1749736005945879971,
   properties: {
-    r'data': PropertySchema(
+    r'bodyHash': PropertySchema(
       id: 0,
+      name: r'bodyHash',
+      type: IsarType.long,
+    ),
+    r'data': PropertySchema(
+      id: 1,
       name: r'data',
       type: IsarType.string,
     ),
     r'expires': PropertySchema(
-      id: 1,
+      id: 2,
       name: r'expires',
       type: IsarType.dateTime,
     ),
     r'headers': PropertySchema(
-      id: 2,
+      id: 3,
       name: r'headers',
       type: IsarType.string,
     ),
     r'key': PropertySchema(
-      id: 3,
-      name: r'key',
-      type: IsarType.string,
-    ),
-    r'postData': PropertySchema(
       id: 4,
-      name: r'postData',
+      name: r'key',
       type: IsarType.string,
     ),
     r'schemeName': PropertySchema(
@@ -85,16 +85,16 @@ const ApiCacheSchema = CollectionSchema(
         )
       ],
     ),
-    r'postData': IndexSchema(
-      id: -8855676028581500502,
-      name: r'postData',
+    r'bodyHash': IndexSchema(
+      id: 20557720831322319,
+      name: r'bodyHash',
       unique: false,
       replace: false,
       properties: [
         IndexPropertySchema(
-          name: r'postData',
-          type: IndexType.hash,
-          caseSensitive: true,
+          name: r'bodyHash',
+          type: IndexType.value,
+          caseSensitive: false,
         )
       ],
     )
@@ -121,12 +121,6 @@ int _apiCacheEstimateSize(
   }
   bytesCount += 3 + object.headers.length * 3;
   bytesCount += 3 + object.key.length * 3;
-  {
-    final value = object.postData;
-    if (value != null) {
-      bytesCount += 3 + value.length * 3;
-    }
-  }
   bytesCount += 3 + object.schemeName.length * 3;
   return bytesCount;
 }
@@ -137,11 +131,11 @@ void _apiCacheSerialize(
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  writer.writeString(offsets[0], object.data);
-  writer.writeDateTime(offsets[1], object.expires);
-  writer.writeString(offsets[2], object.headers);
-  writer.writeString(offsets[3], object.key);
-  writer.writeString(offsets[4], object.postData);
+  writer.writeLong(offsets[0], object.bodyHash);
+  writer.writeString(offsets[1], object.data);
+  writer.writeDateTime(offsets[2], object.expires);
+  writer.writeString(offsets[3], object.headers);
+  writer.writeString(offsets[4], object.key);
   writer.writeString(offsets[5], object.schemeName);
   writer.writeLong(offsets[6], object.statusCode);
 }
@@ -153,12 +147,12 @@ ApiCache _apiCacheDeserialize(
   Map<Type, List<int>> allOffsets,
 ) {
   final object = ApiCache();
-  object.data = reader.readStringOrNull(offsets[0]);
-  object.expires = reader.readDateTime(offsets[1]);
-  object.headers = reader.readString(offsets[2]);
+  object.bodyHash = reader.readLongOrNull(offsets[0]);
+  object.data = reader.readStringOrNull(offsets[1]);
+  object.expires = reader.readDateTime(offsets[2]);
+  object.headers = reader.readString(offsets[3]);
   object.id = id;
-  object.key = reader.readString(offsets[3]);
-  object.postData = reader.readStringOrNull(offsets[4]);
+  object.key = reader.readString(offsets[4]);
   object.schemeName = reader.readString(offsets[5]);
   object.statusCode = reader.readLongOrNull(offsets[6]);
   return object;
@@ -172,15 +166,15 @@ P _apiCacheDeserializeProp<P>(
 ) {
   switch (propertyId) {
     case 0:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readLongOrNull(offset)) as P;
     case 1:
-      return (reader.readDateTime(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 2:
-      return (reader.readString(offset)) as P;
+      return (reader.readDateTime(offset)) as P;
     case 3:
       return (reader.readString(offset)) as P;
     case 4:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 5:
       return (reader.readString(offset)) as P;
     case 6:
@@ -260,6 +254,14 @@ extension ApiCacheQueryWhereSort on QueryBuilder<ApiCache, ApiCache, QWhere> {
   QueryBuilder<ApiCache, ApiCache, QAfterWhere> anyId() {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(const IdWhereClause.any());
+    });
+  }
+
+  QueryBuilder<ApiCache, ApiCache, QAfterWhere> anyBodyHash() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        const IndexWhereClause.any(indexName: r'bodyHash'),
+      );
     });
   }
 }
@@ -419,19 +421,19 @@ extension ApiCacheQueryWhere on QueryBuilder<ApiCache, ApiCache, QWhereClause> {
     });
   }
 
-  QueryBuilder<ApiCache, ApiCache, QAfterWhereClause> postDataIsNull() {
+  QueryBuilder<ApiCache, ApiCache, QAfterWhereClause> bodyHashIsNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(IndexWhereClause.equalTo(
-        indexName: r'postData',
+        indexName: r'bodyHash',
         value: [null],
       ));
     });
   }
 
-  QueryBuilder<ApiCache, ApiCache, QAfterWhereClause> postDataIsNotNull() {
+  QueryBuilder<ApiCache, ApiCache, QAfterWhereClause> bodyHashIsNotNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(IndexWhereClause.between(
-        indexName: r'postData',
+        indexName: r'bodyHash',
         lower: [null],
         includeLower: false,
         upper: [],
@@ -439,54 +441,168 @@ extension ApiCacheQueryWhere on QueryBuilder<ApiCache, ApiCache, QWhereClause> {
     });
   }
 
-  QueryBuilder<ApiCache, ApiCache, QAfterWhereClause> postDataEqualTo(
-      String? postData) {
+  QueryBuilder<ApiCache, ApiCache, QAfterWhereClause> bodyHashEqualTo(
+      int? bodyHash) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(IndexWhereClause.equalTo(
-        indexName: r'postData',
-        value: [postData],
+        indexName: r'bodyHash',
+        value: [bodyHash],
       ));
     });
   }
 
-  QueryBuilder<ApiCache, ApiCache, QAfterWhereClause> postDataNotEqualTo(
-      String? postData) {
+  QueryBuilder<ApiCache, ApiCache, QAfterWhereClause> bodyHashNotEqualTo(
+      int? bodyHash) {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
         return query
             .addWhereClause(IndexWhereClause.between(
-              indexName: r'postData',
+              indexName: r'bodyHash',
               lower: [],
-              upper: [postData],
+              upper: [bodyHash],
               includeUpper: false,
             ))
             .addWhereClause(IndexWhereClause.between(
-              indexName: r'postData',
-              lower: [postData],
+              indexName: r'bodyHash',
+              lower: [bodyHash],
               includeLower: false,
               upper: [],
             ));
       } else {
         return query
             .addWhereClause(IndexWhereClause.between(
-              indexName: r'postData',
-              lower: [postData],
+              indexName: r'bodyHash',
+              lower: [bodyHash],
               includeLower: false,
               upper: [],
             ))
             .addWhereClause(IndexWhereClause.between(
-              indexName: r'postData',
+              indexName: r'bodyHash',
               lower: [],
-              upper: [postData],
+              upper: [bodyHash],
               includeUpper: false,
             ));
       }
+    });
+  }
+
+  QueryBuilder<ApiCache, ApiCache, QAfterWhereClause> bodyHashGreaterThan(
+    int? bodyHash, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'bodyHash',
+        lower: [bodyHash],
+        includeLower: include,
+        upper: [],
+      ));
+    });
+  }
+
+  QueryBuilder<ApiCache, ApiCache, QAfterWhereClause> bodyHashLessThan(
+    int? bodyHash, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'bodyHash',
+        lower: [],
+        upper: [bodyHash],
+        includeUpper: include,
+      ));
+    });
+  }
+
+  QueryBuilder<ApiCache, ApiCache, QAfterWhereClause> bodyHashBetween(
+    int? lowerBodyHash,
+    int? upperBodyHash, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'bodyHash',
+        lower: [lowerBodyHash],
+        includeLower: includeLower,
+        upper: [upperBodyHash],
+        includeUpper: includeUpper,
+      ));
     });
   }
 }
 
 extension ApiCacheQueryFilter
     on QueryBuilder<ApiCache, ApiCache, QFilterCondition> {
+  QueryBuilder<ApiCache, ApiCache, QAfterFilterCondition> bodyHashIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'bodyHash',
+      ));
+    });
+  }
+
+  QueryBuilder<ApiCache, ApiCache, QAfterFilterCondition> bodyHashIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'bodyHash',
+      ));
+    });
+  }
+
+  QueryBuilder<ApiCache, ApiCache, QAfterFilterCondition> bodyHashEqualTo(
+      int? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'bodyHash',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<ApiCache, ApiCache, QAfterFilterCondition> bodyHashGreaterThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'bodyHash',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<ApiCache, ApiCache, QAfterFilterCondition> bodyHashLessThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'bodyHash',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<ApiCache, ApiCache, QAfterFilterCondition> bodyHashBetween(
+    int? lower,
+    int? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'bodyHash',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
   QueryBuilder<ApiCache, ApiCache, QAfterFilterCondition> dataIsNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(const FilterCondition.isNull(
@@ -998,152 +1114,6 @@ extension ApiCacheQueryFilter
     });
   }
 
-  QueryBuilder<ApiCache, ApiCache, QAfterFilterCondition> postDataIsNull() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNull(
-        property: r'postData',
-      ));
-    });
-  }
-
-  QueryBuilder<ApiCache, ApiCache, QAfterFilterCondition> postDataIsNotNull() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNotNull(
-        property: r'postData',
-      ));
-    });
-  }
-
-  QueryBuilder<ApiCache, ApiCache, QAfterFilterCondition> postDataEqualTo(
-    String? value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'postData',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<ApiCache, ApiCache, QAfterFilterCondition> postDataGreaterThan(
-    String? value, {
-    bool include = false,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'postData',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<ApiCache, ApiCache, QAfterFilterCondition> postDataLessThan(
-    String? value, {
-    bool include = false,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'postData',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<ApiCache, ApiCache, QAfterFilterCondition> postDataBetween(
-    String? lower,
-    String? upper, {
-    bool includeLower = true,
-    bool includeUpper = true,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'postData',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<ApiCache, ApiCache, QAfterFilterCondition> postDataStartsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'postData',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<ApiCache, ApiCache, QAfterFilterCondition> postDataEndsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'postData',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<ApiCache, ApiCache, QAfterFilterCondition> postDataContains(
-      String value,
-      {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.contains(
-        property: r'postData',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<ApiCache, ApiCache, QAfterFilterCondition> postDataMatches(
-      String pattern,
-      {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.matches(
-        property: r'postData',
-        wildcard: pattern,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<ApiCache, ApiCache, QAfterFilterCondition> postDataIsEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'postData',
-        value: '',
-      ));
-    });
-  }
-
-  QueryBuilder<ApiCache, ApiCache, QAfterFilterCondition> postDataIsNotEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'postData',
-        value: '',
-      ));
-    });
-  }
-
   QueryBuilder<ApiCache, ApiCache, QAfterFilterCondition> schemeNameEqualTo(
     String value, {
     bool caseSensitive = true,
@@ -1353,6 +1323,18 @@ extension ApiCacheQueryLinks
     on QueryBuilder<ApiCache, ApiCache, QFilterCondition> {}
 
 extension ApiCacheQuerySortBy on QueryBuilder<ApiCache, ApiCache, QSortBy> {
+  QueryBuilder<ApiCache, ApiCache, QAfterSortBy> sortByBodyHash() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'bodyHash', Sort.asc);
+    });
+  }
+
+  QueryBuilder<ApiCache, ApiCache, QAfterSortBy> sortByBodyHashDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'bodyHash', Sort.desc);
+    });
+  }
+
   QueryBuilder<ApiCache, ApiCache, QAfterSortBy> sortByData() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'data', Sort.asc);
@@ -1401,18 +1383,6 @@ extension ApiCacheQuerySortBy on QueryBuilder<ApiCache, ApiCache, QSortBy> {
     });
   }
 
-  QueryBuilder<ApiCache, ApiCache, QAfterSortBy> sortByPostData() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'postData', Sort.asc);
-    });
-  }
-
-  QueryBuilder<ApiCache, ApiCache, QAfterSortBy> sortByPostDataDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'postData', Sort.desc);
-    });
-  }
-
   QueryBuilder<ApiCache, ApiCache, QAfterSortBy> sortBySchemeName() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'schemeName', Sort.asc);
@@ -1440,6 +1410,18 @@ extension ApiCacheQuerySortBy on QueryBuilder<ApiCache, ApiCache, QSortBy> {
 
 extension ApiCacheQuerySortThenBy
     on QueryBuilder<ApiCache, ApiCache, QSortThenBy> {
+  QueryBuilder<ApiCache, ApiCache, QAfterSortBy> thenByBodyHash() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'bodyHash', Sort.asc);
+    });
+  }
+
+  QueryBuilder<ApiCache, ApiCache, QAfterSortBy> thenByBodyHashDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'bodyHash', Sort.desc);
+    });
+  }
+
   QueryBuilder<ApiCache, ApiCache, QAfterSortBy> thenByData() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'data', Sort.asc);
@@ -1500,18 +1482,6 @@ extension ApiCacheQuerySortThenBy
     });
   }
 
-  QueryBuilder<ApiCache, ApiCache, QAfterSortBy> thenByPostData() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'postData', Sort.asc);
-    });
-  }
-
-  QueryBuilder<ApiCache, ApiCache, QAfterSortBy> thenByPostDataDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'postData', Sort.desc);
-    });
-  }
-
   QueryBuilder<ApiCache, ApiCache, QAfterSortBy> thenBySchemeName() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'schemeName', Sort.asc);
@@ -1539,6 +1509,12 @@ extension ApiCacheQuerySortThenBy
 
 extension ApiCacheQueryWhereDistinct
     on QueryBuilder<ApiCache, ApiCache, QDistinct> {
+  QueryBuilder<ApiCache, ApiCache, QDistinct> distinctByBodyHash() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'bodyHash');
+    });
+  }
+
   QueryBuilder<ApiCache, ApiCache, QDistinct> distinctByData(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -1566,13 +1542,6 @@ extension ApiCacheQueryWhereDistinct
     });
   }
 
-  QueryBuilder<ApiCache, ApiCache, QDistinct> distinctByPostData(
-      {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'postData', caseSensitive: caseSensitive);
-    });
-  }
-
   QueryBuilder<ApiCache, ApiCache, QDistinct> distinctBySchemeName(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -1592,6 +1561,12 @@ extension ApiCacheQueryProperty
   QueryBuilder<ApiCache, int, QQueryOperations> idProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'id');
+    });
+  }
+
+  QueryBuilder<ApiCache, int?, QQueryOperations> bodyHashProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'bodyHash');
     });
   }
 
@@ -1616,12 +1591,6 @@ extension ApiCacheQueryProperty
   QueryBuilder<ApiCache, String, QQueryOperations> keyProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'key');
-    });
-  }
-
-  QueryBuilder<ApiCache, String?, QQueryOperations> postDataProperty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'postData');
     });
   }
 
