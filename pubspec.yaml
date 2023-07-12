@@ -9,7 +9,6 @@ environment:
 
 dependencies:
     cryptography: ^2.5.0
-    cryptography_flutter: ^2.3.0
     dio: ^5.2.1+1
     dio_http2_adapter: ^2.3.0
     flutter:

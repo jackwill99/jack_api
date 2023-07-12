@@ -274,6 +274,12 @@ class JackRestApi {
     await CacheService.resetDb();
   }
 
+  /// This will get the size of the whole db in bytes 😅
+  ///
+  Future<int> cacheSize() async {
+    return await CacheService.getSize();
+  }
+
   /// [url] is the fully https url link to download media
   ///
   /// [savePath] is the fully file path including file name and extension

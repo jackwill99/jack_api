@@ -156,6 +156,11 @@ class CacheService {
     debugPrint("\x1B[30;1m ╚   \x1B[0m");
   }
 
+  static Future<int> getSize() async {
+    final isar = GetIt.instance<IsarService>().isar;
+    return await isar.getSize();
+  }
+
   static Future<void> _removeExpiredData(String schemaName) async {
     /// create the port to receive data from
     final resultPort = ReceivePort();
