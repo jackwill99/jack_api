@@ -62,6 +62,8 @@ class JackCacheImage extends ImageProvider<JackCacheImage> {
           "isImage": true,
           "schemaName": "",
           "duration": duration,
+          "isForceRefresh": false,
+          "allowPostMethod": false,
         },
       ),
     );

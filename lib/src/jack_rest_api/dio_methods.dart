@@ -111,6 +111,10 @@ class JackApiMethods {
     final options = <String, dynamic>{};
     if (value == null) {
       options["enableCache"] = false;
+      options["isForceRefresh"] = false;
+      options["allowPostMethod"] = false;
+      options["isImage"] = false;
+      options["schemaName"] = "";
     } else {
       options["enableCache"] = true;
       options["isForceRefresh"] = value.isForceRefresh;
