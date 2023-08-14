@@ -36,30 +36,27 @@ class CacheService {
     unawaited(
       isar.writeTxn(
         () async {
-          final cache = ApiCache()
-            ..key = response.requestOptions.uri.toString()
-            ..bodyHash = hash
-            ..data = jsonEncode(response.data)
-            ..expires = DateTime.now().add(expires)
-            ..statusCode = response.statusCode
+          await isar.apiCaches.put(
+            ApiCache()
+              ..key = response.requestOptions.uri.toString()
+              ..bodyHash = hash
+              ..data = jsonEncode(response.data)
+              ..expires = DateTime.now().add(expires)
+              ..statusCode = response.statusCode
 
-            /// remove Authorization in cache header
-            ..headers =
-                jsonEncode(response.headers.map..remove("Authorization"))
-            ..schemeName = schemaName;
-          debugPrint("success");
-          debugPrint(cache.key);
-          debugPrint(cache.bodyHash.toString());
-          await isar.apiCaches.put(cache);
+              /// remove Authorization in cache header
+              ..headers =
+                  jsonEncode(response.headers.map..remove("Authorization"))
+              ..schemeName = schemaName,
+          );
+          debugPrint("\x1B[35m ╔╣  $schemaName \x1B[0m");
+          debugPrint(
+            "\x1B[35m ║   Cached successfully, Happy api query saving 😎 ✅ \x1B[0m",
+          );
+          debugPrint("\x1B[35m ╚   \x1B[0m");
         },
       ),
     );
-
-    debugPrint("\x1B[35m ╔╣  $schemaName \x1B[0m");
-    debugPrint(
-      "\x1B[35m ║   Cached successfully, Happy api query saving 😎 ✅ \x1B[0m",
-    );
-    debugPrint("\x1B[35m ╚   \x1B[0m");
   }
 
   static Future<ApiCache?> get({
