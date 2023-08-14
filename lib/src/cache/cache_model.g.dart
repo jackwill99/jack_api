@@ -59,19 +59,6 @@ const ApiCacheSchema = CollectionSchema(
   deserializeProp: _apiCacheDeserializeProp,
   idName: r'id',
   indexes: {
-    r'key': IndexSchema(
-      id: -4906094122524121629,
-      name: r'key',
-      unique: true,
-      replace: false,
-      properties: [
-        IndexPropertySchema(
-          name: r'key',
-          type: IndexType.hash,
-          caseSensitive: true,
-        )
-      ],
-    ),
     r'schemeName': IndexSchema(
       id: -6267973034041426503,
       name: r'schemeName',
@@ -196,60 +183,6 @@ void _apiCacheAttach(IsarCollection<dynamic> col, Id id, ApiCache object) {
   object.id = id;
 }
 
-extension ApiCacheByIndex on IsarCollection<ApiCache> {
-  Future<ApiCache?> getByKey(String key) {
-    return getByIndex(r'key', [key]);
-  }
-
-  ApiCache? getByKeySync(String key) {
-    return getByIndexSync(r'key', [key]);
-  }
-
-  Future<bool> deleteByKey(String key) {
-    return deleteByIndex(r'key', [key]);
-  }
-
-  bool deleteByKeySync(String key) {
-    return deleteByIndexSync(r'key', [key]);
-  }
-
-  Future<List<ApiCache?>> getAllByKey(List<String> keyValues) {
-    final values = keyValues.map((e) => [e]).toList();
-    return getAllByIndex(r'key', values);
-  }
-
-  List<ApiCache?> getAllByKeySync(List<String> keyValues) {
-    final values = keyValues.map((e) => [e]).toList();
-    return getAllByIndexSync(r'key', values);
-  }
-
-  Future<int> deleteAllByKey(List<String> keyValues) {
-    final values = keyValues.map((e) => [e]).toList();
-    return deleteAllByIndex(r'key', values);
-  }
-
-  int deleteAllByKeySync(List<String> keyValues) {
-    final values = keyValues.map((e) => [e]).toList();
-    return deleteAllByIndexSync(r'key', values);
-  }
-
-  Future<Id> putByKey(ApiCache object) {
-    return putByIndex(r'key', object);
-  }
-
-  Id putByKeySync(ApiCache object, {bool saveLinks = true}) {
-    return putByIndexSync(r'key', object, saveLinks: saveLinks);
-  }
-
-  Future<List<Id>> putAllByKey(List<ApiCache> objects) {
-    return putAllByIndex(r'key', objects);
-  }
-
-  List<Id> putAllByKeySync(List<ApiCache> objects, {bool saveLinks = true}) {
-    return putAllByIndexSync(r'key', objects, saveLinks: saveLinks);
-  }
-}
-
 extension ApiCacheQueryWhereSort on QueryBuilder<ApiCache, ApiCache, QWhere> {
   QueryBuilder<ApiCache, ApiCache, QAfterWhere> anyId() {
     return QueryBuilder.apply(this, (query) {
@@ -329,50 +262,6 @@ extension ApiCacheQueryWhere on QueryBuilder<ApiCache, ApiCache, QWhereClause> {
         upper: upperId,
         includeUpper: includeUpper,
       ));
-    });
-  }
-
-  QueryBuilder<ApiCache, ApiCache, QAfterWhereClause> keyEqualTo(String key) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IndexWhereClause.equalTo(
-        indexName: r'key',
-        value: [key],
-      ));
-    });
-  }
-
-  QueryBuilder<ApiCache, ApiCache, QAfterWhereClause> keyNotEqualTo(
-      String key) {
-    return QueryBuilder.apply(this, (query) {
-      if (query.whereSort == Sort.asc) {
-        return query
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'key',
-              lower: [],
-              upper: [key],
-              includeUpper: false,
-            ))
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'key',
-              lower: [key],
-              includeLower: false,
-              upper: [],
-            ));
-      } else {
-        return query
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'key',
-              lower: [key],
-              includeLower: false,
-              upper: [],
-            ))
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'key',
-              lower: [],
-              upper: [key],
-              includeUpper: false,
-            ));
-      }
     });
   }
 

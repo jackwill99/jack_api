@@ -1,6 +1,7 @@
 import "dart:async";
 import "dart:convert";
 import "dart:isolate";
+
 import "package:cryptography/cryptography.dart";
 import "package:dio/dio.dart";
 import "package:flutter/foundation.dart";
@@ -32,18 +33,25 @@ class CacheService {
       hash = sha.hashCode;
     }
 
-    await isar.writeTxn(
-      () async => isar.apiCaches.putByKey(
-        ApiCache()
-          ..key = response.requestOptions.uri.toString()
-          ..bodyHash = hash
-          ..data = jsonEncode(response.data)
-          ..expires = DateTime.now().add(expires)
-          ..statusCode = response.statusCode
+    unawaited(
+      isar.writeTxn(
+        () async {
+          final cache = ApiCache()
+            ..key = response.requestOptions.uri.toString()
+            ..bodyHash = hash
+            ..data = jsonEncode(response.data)
+            ..expires = DateTime.now().add(expires)
+            ..statusCode = response.statusCode
 
-          /// remove Authorization in cache header
-          ..headers = jsonEncode(response.headers.map..remove("Authorization"))
-          ..schemeName = schemaName,
+            /// remove Authorization in cache header
+            ..headers =
+                jsonEncode(response.headers.map..remove("Authorization"))
+            ..schemeName = schemaName;
+          debugPrint("success");
+          debugPrint(cache.key);
+          debugPrint(cache.bodyHash.toString());
+          await isar.apiCaches.put(cache);
+        },
       ),
     );
 
@@ -75,9 +83,12 @@ class CacheService {
     }
 
     ApiCache? cache;
+    Hash? hash;
 
-    if (postData != null) {
-      final hash = await Sha256().hash(utf8.encode(postData.toString()));
+    if (postData == null) {
+      cache = await isar.apiCaches.filter().keyEqualTo(key).findFirst();
+    } else {
+      hash = await Sha256().hash(utf8.encode(postData.toString()));
 
       cache = await isar.apiCaches
           .filter()
@@ -87,8 +98,6 @@ class CacheService {
           .and()
           .bodyHashEqualTo(hash.hashCode)
           .findFirst();
-    } else {
-      cache = await isar.apiCaches.getByKey(key);
     }
 
     if (cache == null) {
@@ -98,7 +107,7 @@ class CacheService {
     /// Cache will delete when device is connected with internet and cache data is expire
     if ((RestApiData.isOnline == null || RestApiData.isOnline!) &&
         DateTime.now().isAfter(cache.expires)) {
-      await deleteCache(key);
+      await deleteCache(key, hash);
       return null;
     }
 
@@ -112,9 +121,25 @@ class CacheService {
     return cache;
   }
 
-  static Future<void> deleteCache(String key) async {
+  static Future<void> deleteCache(String key, Hash? hash) async {
     final isar = GetIt.instance<IsarService>().isar;
-    await isar.writeTxn(() async => await isar.apiCaches.deleteByKey(key));
+    if (hash == null) {
+      await isar.writeTxn(
+        () async =>
+            await isar.apiCaches.filter().keyEndsWith(key).deleteFirst(),
+      );
+    } else {
+      await isar.writeTxn(
+        () async => await isar.apiCaches
+            .filter()
+            .keyEndsWith(key)
+            .and()
+            .bodyHashIsNotNull()
+            .and()
+            .bodyHashEqualTo(hash.hashCode)
+            .deleteFirst(),
+      );
+    }
   }
 
   static Future<void> searchAndDelete(
@@ -123,7 +148,7 @@ class CacheService {
   ) async {
     final isar = GetIt.instance<IsarService>().isar;
 
-    if (postData != null) {
+    if (postData == null) {
       await isar.writeTxn<int>(
         () async => await isar.apiCaches.filter().keyEqualTo(key).deleteAll(),
       );
