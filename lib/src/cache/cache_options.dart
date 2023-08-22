@@ -7,7 +7,7 @@ class JackApiCacheOptions {
     this.allowPostMethod = false,
     this.isImage = false,
     this.isForceRefresh = false,
-    this.duration = const Duration(hours: 2),
+    this.duration = const Duration(minutes: 15),
   }) : assert(
           ((isImage == false && schemaName.isNotEmpty) ||
               (isImage == true && schemaName.isEmpty)),
