@@ -36,13 +36,8 @@ class JackRestApi {
       baseUrl: baseUrl,
       connectTimeout: connectTimeout,
     );
-
-    unawaited(GetIt.I.registerSingleton(IsarService()).initialize());
-
     _onBeforeValidate = onBeforeValidate;
-
     _onAfterValidate = onAfterValidate;
-
     _onTimeOutError = onTimeOutError;
 
     _onError = onError;
@@ -54,6 +49,11 @@ class JackRestApi {
     if (value != null) {
       RestApiData.dio.options.headers["Authorization"] = "Bearer $myToken";
     }
+  }
+
+  // Public method to initialize
+  void init() {
+    unawaited(GetIt.I.registerSingleton(IsarService()).initialize());
   }
 
   void setIsOnline({bool? value}) {
