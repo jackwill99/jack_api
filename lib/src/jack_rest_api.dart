@@ -52,8 +52,8 @@ class JackRestApi {
   }
 
   // Public method to initialize
-  void init() {
-    unawaited(GetIt.I.registerSingleton(IsarService()).initialize());
+  Future<void> init() async{
+    await GetIt.I.registerSingleton(IsarService()).initialize();
   }
 
   void setIsOnline({bool? value}) {
