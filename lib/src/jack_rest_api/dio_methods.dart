@@ -196,6 +196,11 @@ class JackApiMethods {
           data: data,
           options: options,
         );
+      case "DELETE":
+        return await dio.delete(
+          path,
+          options: options,
+        );
       default:
         throw "Error Throwing : API method does not correct. Use all capital letter";
     }
