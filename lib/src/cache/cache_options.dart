@@ -11,7 +11,7 @@ class JackApiCacheOptions {
   }) : assert(
           ((isImage == false && schemaName.isNotEmpty) ||
               (isImage == true && schemaName.isEmpty)),
-          "Don't allow both isImage and schemaName. If the image is, schemaName doesn't need. Just an empth string ! 🤩",
+          "Don't allow both isImage and schemaName. If the image is, schemaName doesn't need. Just an empty string ! 🤩",
         );
 
   final bool isImage;

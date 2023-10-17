@@ -7,16 +7,15 @@ import "package:jack_api/src/util.dart";
 class JackApiMethods {
   JackApiMethods({
     required this.baseUrl,
-    required this.dio,
   });
 
   String baseUrl;
-  Dio dio;
 
   Future<void> query<T, R>({
     required String method,
     required String path,
     required bool isContent,
+    required Dio dio,
     required CallBackFunc<T> onSuccess,
     required BeforeCallBackConfig<bool?> beforeValidate,
     required AfterCallBackConfig<T, bool?> afterValidate,
@@ -49,6 +48,7 @@ class JackApiMethods {
     // start to call api request
     try {
       final Response response = await _dioMethod(
+        dio: dio,
         name: method,
         path: path,
         extra: extra,
@@ -86,6 +86,7 @@ class JackApiMethods {
   Future<String?> download({
     required String url,
     required String savePath,
+    required Dio dio,
     void Function()? onTimeOutErrorSync,
     Future<void> Function()? onTimeOutError,
     void Function()? onErrorSync,
@@ -127,8 +128,8 @@ class JackApiMethods {
     return options;
   }
 
-  void setConfig(
-    String? basePath,
+  void changeContentType(
+    Dio dio,
     String? contentType,
   ) {
     if (contentType != null) {
@@ -136,27 +137,24 @@ class JackApiMethods {
     } else {
       dio.options.headers["Content-Type"] = "application/json";
     }
-
-    if (basePath == null) {
-      dio.options.baseUrl = baseUrl;
-    } else {
-      dio.options.baseUrl = basePath;
-    }
   }
 
   void checkToken(
-    String? alreadyToken,
+    String? previousToken,
     String? newToken, {
+    required Dio dio,
     required bool isAlreadyToken,
   }) {
     if (isAlreadyToken) {
-      if (alreadyToken == null) {
+      if (newToken != null) {
+        dio.options.headers["Authorization"] = "Bearer $newToken";
+      } else if (previousToken == null) {
         printError(
           "You have no already token. Set up your token before calling this API ! 😅",
         );
         throw "Error Throwing : you have no token";
       } else {
-        dio.options.headers["Authorization"] = "Bearer $alreadyToken";
+        dio.options.headers["Authorization"] = "Bearer $previousToken";
       }
     } else {
       if (newToken == null) {
@@ -172,6 +170,7 @@ class JackApiMethods {
   Future<Response> _dioMethod({
     required String name,
     required String path,
+    required Dio dio,
     required Map<String, dynamic> extra,
     dynamic data,
   }) async {

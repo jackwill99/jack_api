@@ -69,7 +69,7 @@ class CacheService {
 
     /// One of the day, user reached the query with limit 10 and page 200. but user can't reach this limit and page in other days again.
     /// In this situation, we need to delete old page queries. So, i decided to check every time user first opened
-    if ((RestApiData.isOnline == null || RestApiData.isOnline!) &&
+    if ((OnlineStatus.I.isOnline == null || OnlineStatus.I.isOnline!) &&
         !isImage &&
         !schemaList.contains(schemaName)) {
       /// run isolate and remove old expire data
@@ -102,7 +102,7 @@ class CacheService {
     }
 
     /// Cache will delete when device is connected with internet and cache data is expire
-    if ((RestApiData.isOnline == null || RestApiData.isOnline!) &&
+    if ((OnlineStatus.I.isOnline == null || OnlineStatus.I.isOnline!) &&
         DateTime.now().isAfter(cache.expires)) {
       await deleteCache(key, hash);
       return null;

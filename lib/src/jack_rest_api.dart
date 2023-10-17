@@ -30,35 +30,47 @@ class JackRestApi {
     Future<void> Function()? onError,
     bool useHttp2 = false,
   }) {
-    RestApiData.isUseHttp2 = useHttp2;
+    _isUseHttp2 = useHttp2;
+    _baseUrl = baseUrl;
+    _connectTimeout = connectTimeout;
 
-    _init(
-      baseUrl: baseUrl,
-      connectTimeout: connectTimeout,
-    );
     _onBeforeValidate = onBeforeValidate;
     _onAfterValidate = onAfterValidate;
     _onTimeOutError = onTimeOutError;
-
     _onError = onError;
+
+    _init(
+      baseUrl: baseUrl,
+    );
   }
 
-  String? get myToken => RestApiData.token;
-  set myToken(String? value) {
-    RestApiData.token = value;
-    if (value != null) {
-      RestApiData.dio.options.headers["Authorization"] = "Bearer $myToken";
-    }
-  }
+  JackRestApi copyWith({
+    String? baseUrl,
+    int? connectTimeout,
+    Future<bool> Function()? onBeforeValidate,
+    CallBack? onAfterValidate,
+    Future<void> Function()? onTimeOutError,
+    Future<void> Function()? onError,
+    bool? useHttp2,
+  }) =>
+      JackRestApi(
+        baseUrl: baseUrl ?? _baseUrl,
+        connectTimeout: connectTimeout ?? _connectTimeout,
+        useHttp2: useHttp2 ?? _isUseHttp2,
+        onBeforeValidate: onBeforeValidate ?? _onBeforeValidate,
+        onAfterValidate: onAfterValidate ?? _onAfterValidate,
+        onTimeOutError: onTimeOutError ?? _onTimeOutError,
+        onError: onError ?? _onError,
+      );
 
-  // Public method to initialize
-  Future<void> init() async{
-    await GetIt.I.registerSingleton(IsarService()).initialize();
-  }
+  late bool _isUseHttp2;
+  int? _connectTimeout;
+  late String _baseUrl;
+  String? _token;
+  late RestApiData _restApiData;
 
-  void setIsOnline({bool? value}) {
-    RestApiData.isOnline = value;
-  }
+  /// Dio client
+  late Dio dio;
 
   CallBackWithReturn? _onBeforeValidate;
 
@@ -68,21 +80,45 @@ class JackRestApi {
 
   CallBackNoArgs? _onError;
 
+  String? get myToken => _token;
+
+  /// Public method to initialize
+  Future<void> init() async {
+    await GetIt.I.registerSingleton(IsarService()).initialize();
+  }
+
+  /// Public method to store token value
+  set myToken(String? value) {
+    _token = value;
+    _restApiData.token = value;
+
+    if (value != null) {
+      _restApiData.dio.options.headers["Authorization"] = "Bearer $myToken";
+    } else {
+      _restApiData.dio.options.headers.remove("Authorization");
+    }
+  }
+
+  /// Public method to change internet connection
+  void setIsOnline({bool? value}) {
+    OnlineStatus.I.isOnline = value;
+  }
+
   void _init({
     required String baseUrl,
-    int? connectTimeout,
   }) {
-    final connectionTimeout = connectTimeout == null
+    final connectionTimeout = _connectTimeout == null
         ? const Duration(seconds: 20)
-        : Duration(seconds: connectTimeout);
-    RestApiData.dio = Dio(
+        : Duration(seconds: _connectTimeout!);
+    dio = Dio(
       BaseOptions(
         baseUrl: baseUrl,
         connectTimeout: connectionTimeout,
       ),
     )..options.headers["Content-Type"] = "application/json";
-    if (RestApiData.isUseHttp2) {
-      RestApiData.dio.httpClientAdapter = Http2Adapter(
+
+    if (_isUseHttp2) {
+      dio.httpClientAdapter = Http2Adapter(
         ConnectionManager(
           idleTimeout: connectionTimeout,
           onClientCreate: (_, config) => config.onBadCertificate = (_) => true,
@@ -91,17 +127,18 @@ class JackRestApi {
     }
 
     if (!kReleaseMode) {
-      RestApiData.dio.interceptors.add(
+      dio.interceptors.add(
         PrettyDioLogger(
           requestBody: true,
         ),
       );
     }
-    RestApiData.dio.interceptors.add(
+    dio.interceptors.add(
       CacheInterceptor(),
     );
-    RestApiData.methods =
-        JackApiMethods(baseUrl: baseUrl, dio: RestApiData.dio);
+    final methods = JackApiMethods(baseUrl: baseUrl);
+
+    _restApiData = RestApiData(dio: dio, methods: methods);
   }
 
   /// [method] is the method of API request
@@ -109,8 +146,6 @@ class JackRestApi {
   /// [path] is the api endPoint
   ///
   /// [onSuccess] is the callBack function when you receive successfully the data from server
-  ///
-  /// [basePath] is to modify the API base path of your project
   ///
   /// [contentType] is also to modify the content type of your API request
   ///
@@ -142,7 +177,6 @@ class JackRestApi {
     required String method,
     required String path,
     required CallBackFunc<T> onSuccess,
-    String? basePath,
     Map<String, dynamic>? data,
     String? contentType,
     String? token,
@@ -154,15 +188,20 @@ class JackRestApi {
     CallBackConfig? timeOutError,
     CallBackConfig? error,
   }) async {
-    RestApiData.methods.setConfig(basePath, contentType);
-    _checkToken(token, isAlreadyToken);
-    final extra = RestApiData.methods.setUpCacheOption(cacheOptions);
+    final tempDio = dio;
+    _restApiData.methods.changeContentType(
+      tempDio,
+      null,
+    );
+    _checkToken(tempDio, token, isAlreadyToken);
+    final extra = _restApiData.methods.setUpCacheOption(cacheOptions);
 
-    await RestApiData.methods.query<T, bool?>(
+    await _restApiData.methods.query<T, bool?>(
       method: method,
       path: path,
       data: data,
       isContent: isContent,
+      dio: tempDio,
       onSuccess: onSuccess,
       beforeValidate: beforeValidate ?? BeforeCallBackConfig(),
       afterValidate: afterValidate ?? AfterCallBackConfig(),
@@ -245,18 +284,20 @@ class JackRestApi {
       }
     }
 
-    RestApiData.methods.setConfig(
-      basePath,
+    final tempDio = dio;
+    _restApiData.methods.changeContentType(
+      tempDio,
       "multipart/form-data ; boundary=${formData.boundary}",
     );
-    _checkToken(token, isAlreadyToken);
-    final extra = RestApiData.methods.setUpCacheOption(cacheOptions);
+    _checkToken(tempDio, token, isAlreadyToken);
+    final extra = _restApiData.methods.setUpCacheOption(cacheOptions);
 
-    await RestApiData.methods.query<T, bool?>(
+    await _restApiData.methods.query<T, bool?>(
       method: method,
       path: path,
       data: formData,
       isContent: isContent,
+      dio: dio,
       onSuccess: onSuccess,
       beforeValidate: beforeValidate ?? BeforeCallBackConfig(),
       afterValidate: afterValidate ?? AfterCallBackConfig(),
@@ -302,9 +343,10 @@ class JackRestApi {
     Future<void> Function()? onError,
     bool isDefaultError = true,
   }) async {
-    return await RestApiData.methods.download(
+    return await _restApiData.methods.download(
       url: url,
       savePath: savePath,
+      dio: dio,
       onTimeOutError:
           isDefaultTimeOutError ? onTimeOutError ?? _onTimeOutError : null,
       onError: isDefaultError ? onError ?? _onError : null,
@@ -312,13 +354,15 @@ class JackRestApi {
   }
 
   void _checkToken(
+    Dio tempDio,
     String? token,
     bool isAlreadyToken,
   ) {
-    RestApiData.methods.checkToken(
+    _restApiData.methods.checkToken(
       myToken,
       token,
       isAlreadyToken: isAlreadyToken,
+      dio: tempDio,
     );
   }
 }

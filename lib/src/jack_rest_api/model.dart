@@ -3,14 +3,28 @@ import "package:jack_api/src/jack_rest_api/dio_methods.dart";
 import "package:jack_api/src/util.dart";
 
 class RestApiData {
-  RestApiData._();
+  RestApiData({
+    required this.dio,
+    required this.methods,
+    this.token,
+  });
 
-  static late Dio dio;
-  static late JackApiMethods methods;
+  final Dio dio;
+  final JackApiMethods methods;
 
-  static String? token;
-  static bool? isOnline;
-  static late bool isUseHttp2;
+  String? token;
+}
+
+class OnlineStatus {
+  factory OnlineStatus() {
+    return I;
+  }
+
+  OnlineStatus._();
+
+  static final OnlineStatus I = OnlineStatus._();
+
+  bool? isOnline;
 }
 
 class BeforeCallBackConfig<T> extends CallBackModel {
