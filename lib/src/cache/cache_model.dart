@@ -15,3 +15,15 @@ class ApiCache {
   int? statusCode;
   late DateTime expires;
 }
+
+@collection
+class DataCache {
+  Id id = Isar.autoIncrement;
+  @Index(unique: true)
+  late String key;
+  @Index()
+  late String schemeName;
+
+  late String data;
+  late DateTime expires;
+}

@@ -325,31 +325,26 @@ class JackRestApi {
   ///
   /// [savePath] is the fully file path including file name and extension
   ///
-  /// [onTimeOutError], [onTimeOutErrorSync] is to catch the time out error
+  /// [onTimeOutError] is to catch the time out error
   ///
-  /// [isDefaultTimeOutError] default is true that means when you does not declare above two methods, default method (i.e in the instantiated class) will be use
+  /// [onError] are to catch the error code from server
   ///
-  /// [onError], [onErrorSync] are to catch the error code from server
-  ///
-  /// [isDefaultError] default is true that means when you does not declare above two methods, default method (i.e in the instantiated class) will be use
   ///
   Future<String?> download({
     required String url,
     required String savePath,
-    void Function()? onTimeOutErrorSync,
-    Future<void> Function()? onTimeOutError,
-    bool isDefaultTimeOutError = true,
-    void Function()? onErrorSync,
-    Future<void> Function()? onError,
-    bool isDefaultError = true,
+    void Function(double progress)? onReceiveProgress,
+    FutureOr<void> Function()? onTimeOutError,
+    FutureOr<void> Function()? onError,
   }) async {
+    final tempDio = Dio();
     return await _restApiData.methods.download(
       url: url,
       savePath: savePath,
-      dio: dio,
-      onTimeOutError:
-          isDefaultTimeOutError ? onTimeOutError ?? _onTimeOutError : null,
-      onError: isDefaultError ? onError ?? _onError : null,
+      dio: tempDio,
+      onProgress: onReceiveProgress,
+      onTimeOutError: onTimeOutError ?? _onTimeOutError,
+      onError: onError ?? _onError,
     );
   }
 

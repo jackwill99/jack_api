@@ -9,7 +9,7 @@ class IsarService {
   Future<void> initialize({String instanceName = "jack_will"}) async {
     final dir = await getApplicationDocumentsDirectory();
     _isar = await Isar.open(
-      [ApiCacheSchema],
+      [ApiCacheSchema, DataCacheSchema],
       directory: dir.path,
       name: instanceName,
       // ignore: avoid_redundant_argument_values, avoid_bool_literals_in_conditional_expressions

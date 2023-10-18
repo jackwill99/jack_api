@@ -1,5 +1,4 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
-import "package:isar/isar.dart";
 
 class JackApiCacheOptions {
   JackApiCacheOptions({
@@ -21,12 +20,29 @@ class JackApiCacheOptions {
   final Duration duration;
 }
 
-class ComputeExpired {
-  ComputeExpired({
-    required this.isar,
+/// [key] must be unique
+class DataCacheOptions {
+  DataCacheOptions({
+    required this.data,
+    required this.expiry,
+    required this.key,
     required this.schemaName,
   });
 
-  final Isar isar;
   final String schemaName;
+  final String key;
+  final String data;
+  final Duration expiry;
 }
+
+
+
+// class ComputeExpired {
+//   ComputeExpired({
+//     required this.isar,
+//     required this.schemaName,
+//   });
+//
+//   final Isar isar;
+//   final String schemaName;
+// }

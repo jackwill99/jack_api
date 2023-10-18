@@ -1,3 +1,5 @@
+import "dart:async";
+
 import "package:dio/dio.dart";
 import "package:jack_api/src/cache/cache_options.dart";
 import "package:jack_api/src/jack_rest_api/model.dart";
@@ -87,22 +89,28 @@ class JackApiMethods {
     required String url,
     required String savePath,
     required Dio dio,
-    void Function()? onTimeOutErrorSync,
-    Future<void> Function()? onTimeOutError,
-    void Function()? onErrorSync,
-    Future<void> Function()? onError,
+    void Function(double progress)? onProgress,
+    FutureOr<void> Function()? onTimeOutError,
+    FutureOr<void> Function()? onError,
   }) async {
     try {
-      await dio.download(url, savePath);
+      await dio.download(
+        url,
+        savePath,
+        onReceiveProgress: onProgress == null
+            ? null
+            : (received, total) {
+                final progress = (received / total) * 100;
+                onProgress(progress);
+              },
+      );
       return savePath;
     } on DioException catch (e) {
       if (e.type == DioExceptionType.connectionTimeout) {
         await onTimeOutError?.call();
-        onTimeOutErrorSync?.call();
       } else {
-        printError("Dio Excepition error -->");
+        printError("Dio Exception error -->");
         await onError?.call();
-        onErrorSync?.call();
       }
     }
     return null;

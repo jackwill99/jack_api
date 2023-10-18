@@ -73,7 +73,7 @@ class CacheService {
         !isImage &&
         !schemaList.contains(schemaName)) {
       /// run isolate and remove old expire data
-      unawaited(_removeExpiredData(schemaName));
+      unawaited(removeExpiredData(schemaName));
 
       /// add schema list
       schemaList.add(schemaName);
@@ -183,7 +183,7 @@ class CacheService {
     return await isar.getSize();
   }
 
-  static Future<void> _removeExpiredData(String schemaName) async {
+  static Future<void> removeExpiredData(String schemaName) async {
     /// create the port to receive data from
     final resultPort = ReceivePort();
     final rootToken = RootIsolateToken.instance!;
