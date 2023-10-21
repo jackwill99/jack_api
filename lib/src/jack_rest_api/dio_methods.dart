@@ -85,7 +85,7 @@ class JackApiMethods {
     }
   }
 
-  Future<String?> download({
+  static Future<String?> download({
     required String url,
     required String savePath,
     required Dio dio,

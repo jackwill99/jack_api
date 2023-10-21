@@ -330,7 +330,7 @@ class JackRestApi {
   /// [onError] are to catch the error code from server
   ///
   ///
-  Future<String?> download({
+  static Future<String?> download({
     required String url,
     required String savePath,
     void Function(double progress)? onReceiveProgress,
@@ -338,13 +338,13 @@ class JackRestApi {
     FutureOr<void> Function()? onError,
   }) async {
     final tempDio = Dio();
-    return await _restApiData.methods.download(
+    return await JackApiMethods.download(
       url: url,
       savePath: savePath,
       dio: tempDio,
       onProgress: onReceiveProgress,
-      onTimeOutError: onTimeOutError ?? _onTimeOutError,
-      onError: onError ?? _onError,
+      onTimeOutError: onTimeOutError,
+      onError: onError,
     );
   }
 
