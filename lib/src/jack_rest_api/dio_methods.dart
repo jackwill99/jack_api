@@ -23,7 +23,7 @@ class JackApiMethods {
     required AfterCallBackConfig<T, bool?> afterValidate,
     required CallBackConfig timeOutError,
     required CallBackConfig error,
-    required Map<String, dynamic> extra,
+    required CacheOptionsStatus extra,
     dynamic data,
     CallBackWithReturn? oldBeforeValidate,
     CallBack? oldAfterValidate,
@@ -116,24 +116,18 @@ class JackApiMethods {
     return null;
   }
 
-  Map<String, dynamic> setUpCacheOption(JackApiCacheOptions? value) {
-    final options = <String, dynamic>{};
+  CacheOptionsStatus setUpCacheOption(JackApiCacheOptions? value) {
     if (value == null) {
-      options["enableCache"] = false;
-      options["isForceRefresh"] = false;
-      options["allowPostMethod"] = false;
-      options["isImage"] = false;
-      options["schemaName"] = "";
+      return CacheOptionsStatus(cacheEnable: false, schemaName: "");
     } else {
-      options["enableCache"] = true;
-      options["isForceRefresh"] = value.isForceRefresh;
-      options["allowPostMethod"] = value.allowPostMethod;
-      options["isImage"] = value.isImage;
-      options["schemaName"] = value.schemaName;
-      options["duration"] = value.duration;
+      return CacheOptionsStatus(
+        cacheEnable: true,
+        schemaName: value.schemaName,
+        isForceRefresh: value.isForceRefresh,
+        allowPostMethod: value.allowPostMethod,
+        duration: value.duration,
+      );
     }
-
-    return options;
   }
 
   void changeContentType(
@@ -179,11 +173,11 @@ class JackApiMethods {
     required String name,
     required String path,
     required Dio dio,
-    required Map<String, dynamic> extra,
+    required CacheOptionsStatus extra,
     dynamic data,
   }) async {
     final options = Options().copyWith(
-      extra: extra,
+      extra: extra.toMap(),
     );
     switch (name) {
       case "GET":

@@ -13,21 +13,20 @@ class CacheInterceptor extends Interceptor {
     RequestOptions options,
     RequestInterceptorHandler handler,
   ) async {
-    final extra = options.extra;
-    final postDataOptions =
-        (options.method != "GET" && (extra["allowPostMethod"] as bool))
-            ? options.data
-            : null;
+    final extra = CacheOptionsStatus.fromMap(options.extra);
+    final postDataOptions = (options.method != "GET" && (extra.allowPostMethod))
+        ? options.data
+        : null;
 
-    if (OnlineStatus.I.isOnline == null || OnlineStatus.I.isOnline!) {
+    if (OnlineStatus.I.isOnline != null && OnlineStatus.I.isOnline!) {
       /// Situation of caching
       /// - enable cache (and)
       /// - not isForceRefresh (and)
       /// - ( get method (or)
       /// - not get method (and) allow post method )
-      if (!(extra["enableCache"] as bool) ||
-          (extra["isForceRefresh"] as bool) ||
-          (options.method != "GET" && !(extra["allowPostMethod"] as bool))) {
+      if (!(extra.cacheEnable) ||
+          (extra.isForceRefresh) ||
+          (options.method != "GET" && !(extra.allowPostMethod))) {
         unawaited(
           CacheService.searchAndDelete(
             options.uri.toString(),
@@ -41,8 +40,7 @@ class CacheInterceptor extends Interceptor {
 
     final cache = await CacheService.get(
       key: options.uri.toString(),
-      schemaName: extra["schemaName"],
-      isImage: extra["isImage"],
+      schemaName: extra.schemaName,
       postData: postDataOptions,
     );
     if (cache == null) {
@@ -71,20 +69,18 @@ class CacheInterceptor extends Interceptor {
     Response response,
     ResponseInterceptorHandler handler,
   ) async {
-    final extra = response.requestOptions.extra;
+    final extra = CacheOptionsStatus.fromMap(response.requestOptions.extra);
 
-    if (!(extra["enableCache"] as bool) ||
-        (response.requestOptions.method != "GET" &&
-            !(extra["allowPostMethod"] as bool))) {
+    if (!(extra.cacheEnable) ||
+        (response.requestOptions.method != "GET" && !(extra.allowPostMethod))) {
       handler.next(response);
       return;
     }
     await CacheService.store(
       response,
-      extra["schemaName"],
-      extra["duration"],
-      (response.requestOptions.method != "GET" &&
-              (extra["allowPostMethod"] as bool))
+      extra.schemaName,
+      extra.duration,
+      (response.requestOptions.method != "GET" && (extra.allowPostMethod))
           ? response.requestOptions.data
           : null,
     );

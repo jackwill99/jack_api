@@ -1,23 +1,51 @@
-// ignore_for_file: public_member_api_docs, sort_constructors_first
-
 class JackApiCacheOptions {
   JackApiCacheOptions({
     required this.schemaName,
     this.allowPostMethod = false,
-    this.isImage = false,
     this.isForceRefresh = false,
     this.duration = const Duration(minutes: 3),
-  }) : assert(
-          ((isImage == false && schemaName.isNotEmpty) ||
-              (isImage == true && schemaName.isEmpty)),
-          "Don't allow both isImage and schemaName. If the image is, schemaName doesn't need. Just an empty string ! 🤩",
-        );
+  });
 
-  final bool isImage;
   final bool isForceRefresh;
   final bool allowPostMethod;
   final String schemaName;
   final Duration duration;
+}
+
+class CacheOptionsStatus {
+  CacheOptionsStatus({
+    required this.cacheEnable,
+    required this.schemaName,
+    this.allowPostMethod = false,
+    this.isForceRefresh = false,
+    this.duration = const Duration(minutes: 3),
+  });
+
+  factory CacheOptionsStatus.fromMap(Map<String, dynamic> map) {
+    return CacheOptionsStatus(
+      cacheEnable: map["cacheEnable"] as bool,
+      isForceRefresh: map["isForceRefresh"] as bool,
+      allowPostMethod: map["allowPostMethod"] as bool,
+      schemaName: map["schemaName"] as String,
+      duration: map["duration"] as Duration,
+    );
+  }
+
+  final bool cacheEnable;
+  final bool isForceRefresh;
+  final bool allowPostMethod;
+  final String schemaName;
+  final Duration duration;
+
+  Map<String, dynamic> toMap() {
+    return {
+      "cacheEnable": cacheEnable,
+      "isForceRefresh": isForceRefresh,
+      "allowPostMethod": allowPostMethod,
+      "schemaName": schemaName,
+      "duration": duration,
+    };
+  }
 }
 
 /// [key] must be unique
@@ -34,15 +62,3 @@ class DataCacheOptions {
   final String data;
   final Duration expiry;
 }
-
-
-
-// class ComputeExpired {
-//   ComputeExpired({
-//     required this.isar,
-//     required this.schemaName,
-//   });
-//
-//   final Isar isar;
-//   final String schemaName;
-// }

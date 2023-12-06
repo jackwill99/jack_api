@@ -9,14 +9,6 @@ import "package:jack_api/src/cache/isar_service.dart";
 import "package:jack_api/src/util.dart";
 
 class DataCacheService {
-  factory DataCacheService() {
-    return I;
-  }
-
-  DataCacheService._();
-
-  static final DataCacheService I = DataCacheService._();
-
   final _isar = GetIt.instance<IsarService>().isar;
 
   Future<void> store({required DataCacheOptions options}) async {
@@ -38,7 +30,7 @@ class DataCacheService {
     required String schemaName,
     void Function(String cache)? whenExpired,
   }) async {
-    if ((OnlineStatus.I.isOnline == null || OnlineStatus.I.isOnline!) &&
+    if ((OnlineStatus.I.isOnline != null && OnlineStatus.I.isOnline!) &&
         !CacheService.schemaList.contains(schemaName)) {
       /// run isolate and remove old expire data
       unawaited(CacheService.removeExpiredData(schemaName));
@@ -82,7 +74,7 @@ class DataCacheService {
   Future<void> update({
     required String key,
     required String schemaName,
-    required String data,
+    required FutureOr<String> Function(String data) modifier,
   }) async {
     final cache = await _isar.dataCaches
         .filter()
@@ -96,7 +88,7 @@ class DataCacheService {
       throw "No cache data found";
     }
 
-    cache.data = data;
+    cache.data = await modifier(cache.data);
 
     await _isar.writeTxn(
       () async {

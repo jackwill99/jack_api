@@ -62,15 +62,13 @@ class CacheService {
   static Future<ApiCache?> get({
     required String key,
     required String schemaName,
-    bool isImage = false,
     dynamic postData,
   }) async {
     final isar = GetIt.instance<IsarService>().isar;
 
     /// One of the day, user reached the query with limit 10 and page 200. but user can't reach this limit and page in other days again.
     /// In this situation, we need to delete old page queries. So, i decided to check every time user first opened
-    if ((OnlineStatus.I.isOnline == null || OnlineStatus.I.isOnline!) &&
-        !isImage &&
+    if ((OnlineStatus.I.isOnline != null && OnlineStatus.I.isOnline!) &&
         !schemaList.contains(schemaName)) {
       /// run isolate and remove old expire data
       unawaited(removeExpiredData(schemaName));
@@ -102,7 +100,7 @@ class CacheService {
     }
 
     /// Cache will delete when device is connected with internet and cache data is expire
-    if ((OnlineStatus.I.isOnline == null || OnlineStatus.I.isOnline!) &&
+    if ((OnlineStatus.I.isOnline != null && OnlineStatus.I.isOnline!) &&
         DateTime.now().isAfter(cache.expires)) {
       await deleteCache(key, hash);
       return null;
