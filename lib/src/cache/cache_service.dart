@@ -35,7 +35,7 @@ class CacheService {
     unawaited(
       isar?.writeTxn(
         () async {
-          await isar?.apiCaches.put(
+          await isar.apiCaches.put(
             ApiCache()
               ..key = response.requestOptions.uri.toString()
               ..bodyHash = hash

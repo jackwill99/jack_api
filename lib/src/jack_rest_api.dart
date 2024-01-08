@@ -288,6 +288,15 @@ class JackRestApi {
     return await CacheService.getSize();
   }
 
+  /// Search and delete the cached api data
+  ///
+  Future<void> searchAndDelete({
+    required String key,
+    dynamic data,
+  })async {
+    await  CacheService.searchAndDelete(key, data);
+  }
+
   /// [url] is the fully https url link to download media
   ///
   /// [savePath] is the fully file path including file name and extension
