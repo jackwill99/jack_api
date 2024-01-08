@@ -3,7 +3,17 @@ import "package:isar/isar.dart";
 import "package:jack_api/src/cache/cache_model.dart";
 import "package:path_provider/path_provider.dart";
 
+
+
 class IsarService {
+  factory IsarService() {
+    return I;
+  }
+
+  IsarService._();
+
+  static final IsarService I = IsarService._();
+
   Isar? _isar;
 
   Future<void> initialize({String instanceName = "jack_will"}) async {
@@ -17,5 +27,5 @@ class IsarService {
     );
   }
 
-  Isar get isar => _isar!;
+  Isar? get isar  => _isar;
 }

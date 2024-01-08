@@ -13,7 +13,7 @@ class JackApiMethods {
 
   String baseUrl;
 
-  Future<void> query<T, R>({
+  Future<Response?> query<T, R>({
     required String method,
     required String path,
     required bool isContent,
@@ -44,7 +44,7 @@ class JackApiMethods {
       beforeValidate: beforeValidate,
       oldBeforeValidate: oldBeforeValidate,
     )) {
-      return;
+      return null;
     }
 
     // start to call api request
@@ -68,10 +68,12 @@ class JackApiMethods {
         afterValidate: afterValidate,
         oldAfterValidate: oldAfterValidate,
       )) {
-        return;
+        return null;
       }
 
       await onSuccess(responseData);
+
+      return response;
     } on DioException catch (e) {
       if (e.type == DioExceptionType.connectionTimeout) {
         await checkTimeOut(
@@ -81,6 +83,7 @@ class JackApiMethods {
       } else {
         printError("Dio Excepition error -->");
         await checkError(error: error, oldError: oldError);
+        rethrow;
       }
     }
   }

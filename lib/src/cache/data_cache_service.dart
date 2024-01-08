@@ -1,6 +1,5 @@
 import "dart:async";
 
-import "package:get_it/get_it.dart";
 import "package:isar/isar.dart";
 import "package:jack_api/jack_api.dart";
 import "package:jack_api/src/cache/cache_model.dart";
@@ -9,10 +8,17 @@ import "package:jack_api/src/cache/isar_service.dart";
 import "package:jack_api/src/util.dart";
 
 class DataCacheService {
-  final _isar = GetIt.instance<IsarService>().isar;
+  final _isar = IsarService.I.isar;
+
+  /// Public method to initialize
+  Future<void> initCacheService() async {
+    if (IsarService.I.isar == null){
+      await IsarService.I.initialize();
+    }
+  }
 
   Future<void> store({required DataCacheOptions options}) async {
-    await _isar.writeTxn(
+    await _isar?.writeTxn(
       () async {
         final dataCache = DataCache()
           ..key = options.key
@@ -20,7 +26,7 @@ class DataCacheService {
           ..expires = DateTime.now().add(options.expiry)
           ..schemeName = options.schemaName;
 
-        await _isar.dataCaches.put(dataCache);
+        await _isar?.dataCaches.put(dataCache);
       },
     );
   }
@@ -39,7 +45,7 @@ class DataCacheService {
       CacheService.schemaList.add(schemaName);
     }
 
-    final cache = await _isar.dataCaches
+    final cache = await _isar?.dataCaches
         .filter()
         .keyEqualTo(key)
         .and()
@@ -54,8 +60,8 @@ class DataCacheService {
     /// Cache will delete when device is connected with internet and cache data is expire
     if ((OnlineStatus.I.isOnline == null || OnlineStatus.I.isOnline!) &&
         DateTime.now().isAfter(cache.expires)) {
-      await _isar.writeTxn(() async {
-        await _isar.dataCaches
+      await _isar?.writeTxn(() async {
+        await _isar?.dataCaches
             .filter()
             .keyEqualTo(key)
             .and()
@@ -76,7 +82,7 @@ class DataCacheService {
     required String schemaName,
     required FutureOr<String> Function(String data) modifier,
   }) async {
-    final cache = await _isar.dataCaches
+    final cache = await _isar?.dataCaches
         .filter()
         .keyEqualTo(key)
         .and()
@@ -90,9 +96,9 @@ class DataCacheService {
 
     cache.data = await modifier(cache.data);
 
-    await _isar.writeTxn(
+    await _isar?.writeTxn(
       () async {
-        await _isar.dataCaches.put(cache);
+        await _isar?.dataCaches.put(cache);
       },
     );
   }
@@ -101,8 +107,8 @@ class DataCacheService {
     required String key,
     required String schemaName,
   }) async {
-    await _isar.writeTxn(() async {
-      await _isar.dataCaches
+    await _isar?.writeTxn(() async {
+      await _isar?.dataCaches
           .filter()
           .keyEqualTo(key)
           .and()

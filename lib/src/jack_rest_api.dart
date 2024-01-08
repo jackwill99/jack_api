@@ -3,7 +3,6 @@ import "dart:async";
 import "package:dio/dio.dart";
 import "package:dio_http2_adapter/dio_http2_adapter.dart";
 import "package:flutter/foundation.dart";
-import "package:get_it/get_it.dart";
 import "package:jack_api/src/cache/cache_interceptor.dart";
 import "package:jack_api/src/cache/cache_options.dart";
 import "package:jack_api/src/cache/cache_service.dart";
@@ -70,7 +69,9 @@ class JackRestApi {
   late RestApiData _restApiData;
 
   /// Dio client
-  late Dio dio;
+  late Dio _dio;
+
+  Dio get dio => _dio;
 
   CallBackWithReturn? _onBeforeValidate;
 
@@ -83,8 +84,10 @@ class JackRestApi {
   String? get myToken => _token;
 
   /// Public method to initialize
-  Future<void> init() async {
-    await GetIt.I.registerSingleton(IsarService()).initialize();
+  Future<void> initCacheService() async {
+    if (IsarService.I.isar == null){
+      await IsarService.I.initialize();
+    }
   }
 
   /// Public method to store token value
@@ -110,7 +113,7 @@ class JackRestApi {
     final connectionTimeout = _connectTimeout == null
         ? const Duration(seconds: 20)
         : Duration(seconds: _connectTimeout!);
-    dio = Dio(
+    _dio = Dio(
       BaseOptions(
         baseUrl: baseUrl,
         connectTimeout: connectionTimeout,
@@ -155,25 +158,7 @@ class JackRestApi {
   ///
   /// [isAlreadyToken] default is true, it will take the default token and throw an error when you have not default token. You should use this true after setting up the default token
   ///
-  /// Below methods are overriding the existing methods that you created while instantiating class 😤
-  ///
-  // / [onBeforeValidate] , [onBeforeValidateSync] is to check before calling the api request eg. Checking Internet connection before request to api
-  // /
-  // / [isDefaultBeforeValidate] default is true that means when you does not declare above two methods, default method (i.e in the instantiated class) will be use
-  // /
-  // / [onAfterValidate] , [onAfterValidateSync] is to check after calling the api request eg. Checking authorized or 400 error
-  // /
-  // / [isDefaultAfterValidate] default is true that means when you does not declare above two methods, default method (i.e in the instantiated class) will be use
-  // /
-  // / [onTimeOutError], [onTimeOutErrorSync] is to catch the time out error
-  // /
-  // / [isDefaultTimeOutError] default is true that means when you does not declare above two methods, default method (i.e in the instantiated class) will be use
-  // /
-  // / [onError], [onErrorSync] are to catch the error code from server
-  // /
-  // / [isDefaultError] default is true that means when you does not declare above two methods, default method (i.e in the instantiated class) will be use
-  // /
-  Future<void> query<T>({
+  Future<Response?> query<T>({
     required String method,
     required String path,
     required CallBackFunc<T> onSuccess,
@@ -196,7 +181,7 @@ class JackRestApi {
     _checkToken(tempDio, token, isAlreadyToken);
     final extra = _restApiData.methods.setUpCacheOption(cacheOptions);
 
-    await _restApiData.methods.query<T, bool?>(
+    return await _restApiData.methods.query<T, bool?>(
       method: method,
       path: path,
       data: data,
@@ -229,24 +214,6 @@ class JackRestApi {
   ///
   /// [isAlreadyToken] default is true, it will take the default token and throw an error when you have not default token. You should use this true after setting up the default token
   ///
-  /// Below methods are overriding the existing methods that you created while instantiating class 😤
-  ///
-  // / [onBeforeValidate] , [onBeforeValidateSync] is to check before calling the api request eg. Checking Internet connection before request to api
-  // /
-  // / [isDefaultBeforeValidate] default is true that means when you does not declare above two methods, default method (i.e in the instantiated class) will be use
-  // /
-  // / [onAfterValidate] , [onAfterValidateSync] is to check after calling the api request eg. Checking authorized or 400 error
-  // /
-  // / [isDefaultAfterValidate] default is true that means when you does not declare above two methods, default method (i.e in the instantiated class) will be use
-  // /
-  // / [onTimeOutError], [onTimeOutErrorSync] is to catch the time out error
-  // /
-  // / [isDefaultTimeOutError] default is true that means when you does not declare above two methods, default method (i.e in the instantiated class) will be use
-  // /
-  // / [onError], [onErrorSync] are to catch the error code from server
-  // /
-  // / [isDefaultError] default is true that means when you does not declare above two methods, default method (i.e in the instantiated class) will be use
-  // /
   Future<void> postWithForm<T>({
     required String method,
     required String path,
@@ -317,7 +284,7 @@ class JackRestApi {
 
   /// This will get the size of the whole db in bytes 😅
   ///
-  Future<int> cacheSize() async {
+  Future<int?> cacheSize() async {
     return await CacheService.getSize();
   }
 

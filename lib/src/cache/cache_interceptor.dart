@@ -2,8 +2,10 @@ import "dart:async";
 import "dart:convert";
 
 import "package:dio/dio.dart";
-import "package:jack_api/jack_api.dart";
+import "package:jack_api/src/cache/cache_options.dart";
 import "package:jack_api/src/cache/cache_service.dart";
+import "package:jack_api/src/cache/isar_service.dart";
+import "package:jack_api/src/jack_rest_api/model.dart";
 
 class CacheInterceptor extends Interceptor {
   CacheInterceptor();
@@ -13,6 +15,11 @@ class CacheInterceptor extends Interceptor {
     RequestOptions options,
     RequestInterceptorHandler handler,
   ) async {
+    if (IsarService.I.isar == null){
+      handler.next(options);
+      return;
+    }
+
     final extra = CacheOptionsStatus.fromMap(options.extra);
     final postDataOptions = (options.method != "GET" && (extra.allowPostMethod))
         ? options.data
@@ -69,6 +76,11 @@ class CacheInterceptor extends Interceptor {
     Response response,
     ResponseInterceptorHandler handler,
   ) async {
+    if (IsarService.I.isar == null){
+      handler.next(response);
+      return;
+    }
+
     final extra = CacheOptionsStatus.fromMap(response.requestOptions.extra);
 
     if (!(extra.cacheEnable) ||

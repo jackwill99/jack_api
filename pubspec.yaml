@@ -13,7 +13,6 @@ dependencies:
   dio_http2_adapter:
   flutter:
     sdk: flutter
-  get_it:
   isar: ^3.1.0+1
   isar_flutter_libs:
   path_provider: 2.1.1

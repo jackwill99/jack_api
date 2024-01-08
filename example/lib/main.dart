@@ -1,3 +1,4 @@
+import 'package:example/api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:jack_api/jack_api.dart';
 
@@ -35,35 +36,17 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   late DataCacheService cacheService;
 
-  late JackRestApi api;
+  final ApiService api = ApiService();
 
   @override
   void initState() {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
-      api = JackRestApi(baseUrl: "https://fakestoreapi.com");
-
-      await api.init();
+      await api.init("https://fakestoreapi.com");
 
       cacheService = DataCacheService();
     });
-  }
-
-  void getProducts() {
-    api.query(
-      method: "GET",
-      path: "/products",
-      cacheOptions: JackApiCacheOptions(
-        schemaName: "products",
-        duration: const Duration(minutes: 10),
-      ),
-      isAlreadyToken: false,
-      onSuccess: (data) async {
-        debugPrint(
-            "----------------------onSuccess $data----------------------");
-      },
-    );
   }
 
   @override
@@ -113,7 +96,7 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: getProducts,
+        onPressed: api.getProducts,
         tooltip: 'Increment',
         child: const Icon(Icons.add),
       ), // This trailing comma makes auto-formatting nicer for build methods.
