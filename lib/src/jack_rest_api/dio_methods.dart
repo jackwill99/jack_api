@@ -23,7 +23,7 @@ class JackApiMethods {
     required AfterCallBackConfig<T, bool?> afterValidate,
     required CallBackConfig timeOutError,
     required CallBackConfig error,
-    required CacheOptionsStatus extra,
+    CacheOptionsStatus? extra,
     dynamic data,
     CallBackWithReturn? oldBeforeValidate,
     CallBack? oldAfterValidate,
@@ -86,6 +86,7 @@ class JackApiMethods {
         rethrow;
       }
     }
+    return null;
   }
 
   static Future<String?> download({
@@ -119,7 +120,10 @@ class JackApiMethods {
     return null;
   }
 
-  CacheOptionsStatus setUpCacheOption(JackApiCacheOptions? value) {
+  CacheOptionsStatus setUpCacheOption(
+    JackApiCacheOptions? value,
+    StreamController<bool>? cacheStatusStream,
+  ) {
     if (value == null) {
       return CacheOptionsStatus(cacheEnable: false, schemaName: "");
     } else {
@@ -129,6 +133,7 @@ class JackApiMethods {
         isForceRefresh: value.isForceRefresh,
         allowPostMethod: value.allowPostMethod,
         duration: value.duration,
+        cacheStatusStream: cacheStatusStream,
       );
     }
   }
@@ -176,11 +181,11 @@ class JackApiMethods {
     required String name,
     required String path,
     required Dio dio,
-    required CacheOptionsStatus extra,
+    CacheOptionsStatus? extra,
     dynamic data,
   }) async {
     final options = Options().copyWith(
-      extra: extra.toMap(),
+      extra: extra?.toMap(),
     );
     switch (name) {
       case "GET":

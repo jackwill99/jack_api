@@ -85,7 +85,7 @@ class JackRestApi {
 
   /// Public method to initialize
   Future<void> initCacheService() async {
-    if (IsarService.I.isar == null){
+    if (IsarService.I.isar == null) {
       await IsarService.I.initialize();
     }
   }
@@ -168,6 +168,7 @@ class JackRestApi {
     bool isContent = false,
     bool isAlreadyToken = true,
     JackApiCacheOptions? cacheOptions,
+    StreamController<bool>? cacheStatusStream,
     BeforeCallBackConfig<bool?>? beforeValidate,
     AfterCallBackConfig<T, bool?>? afterValidate,
     CallBackConfig? timeOutError,
@@ -179,7 +180,8 @@ class JackRestApi {
       null,
     );
     _checkToken(tempDio, token, isAlreadyToken);
-    final extra = _restApiData.methods.setUpCacheOption(cacheOptions);
+    final extra =
+        _restApiData.methods.setUpCacheOption(cacheOptions, cacheStatusStream);
 
     return await _restApiData.methods.query<T, bool?>(
       method: method,
@@ -220,6 +222,7 @@ class JackRestApi {
     required Map<String, dynamic> data,
     required CallBackFunc<T> onSuccess,
     JackApiCacheOptions? cacheOptions,
+    StreamController<bool>? cacheStatusStream,
     String? basePath,
     List<String>? filePaths,
     String? token,
@@ -257,7 +260,8 @@ class JackRestApi {
       "multipart/form-data ; boundary=${formData.boundary}",
     );
     _checkToken(tempDio, token, isAlreadyToken);
-    final extra = _restApiData.methods.setUpCacheOption(cacheOptions);
+    final extra =
+        _restApiData.methods.setUpCacheOption(cacheOptions, cacheStatusStream);
 
     await _restApiData.methods.query<T, bool?>(
       method: method,
@@ -293,8 +297,8 @@ class JackRestApi {
   Future<void> searchAndDelete({
     required String key,
     dynamic data,
-  })async {
-    await  CacheService.searchAndDelete(key, data);
+  }) async {
+    await CacheService.searchAndDelete(key, data);
   }
 
   /// [url] is the fully https url link to download media

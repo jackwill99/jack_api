@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:example/test_exception.dart';
+import 'package:flutter/foundation.dart';
 import 'package:jack_api/jack_api.dart';
 
 class ApiService {
@@ -14,26 +17,40 @@ class ApiService {
     // await api.init();
   }
 
+  Future<dynamic> apiGetProducts(DataCacheService cacheService,
+      StreamController<bool> statusController) async {
+    dynamic result;
+
+    await api.query(
+      method: "GET",
+      path: "/products",
+      //   cacheOptions: JackApiCacheOptions(
+      //     schemaName: "products",
+      //     duration: const Duration(minutes: 10),
+      //   ),
+      //   cacheStatusStream: statusController,
+      isAlreadyToken: false,
+      onSuccess: (d) async {
+        debugPrint("----------------------onSuccess $d----------------------");
+        if (d != null) {
+          result = d as dynamic;
+          await cacheService.store(
+            options: DataCacheOptions(
+                data: d.toString(),
+                expiry: const Duration(seconds: 10),
+                key: "cacheService2",
+                schemaName: "cacheService2"),
+          );
+        }
+      },
+    );
+
+    return result;
+  }
+
   Future<int?> getProducts() async {
-    Map<String, dynamic>? result;
     final data = await testDio.get("/products");
-    // await api.query(
-    //   method: "GET",
-    //   path: "/products",
-    //   cacheOptions: JackApiCacheOptions(
-    //     schemaName: "products",
-    //     duration: const Duration(minutes: 10),
-    //   ),
-    //   isAlreadyToken: false,
-    //   onSuccess: (data) async {
-    //     debugPrint(
-    //         "----------------------onSuccess $data----------------------");
-    //     if (data != null) {
-    //       result = data as Map<String, dynamic>;
-    //     }
-    //   },
-    // );
-    print("-------------api service---------${data}----------------------");
+    debugPrint("-------------api service---------$data----------------------");
 
     return data.statusCode;
   }
@@ -51,10 +68,11 @@ class TestApi {
     try {
       // res = await dio.get("/products");
       res = await rest.query(
-          method: "GET",
-          path: "/products",
-          isAlreadyToken: false,
-          onSuccess: (d) async {},);
+        method: "GET",
+        path: "/products",
+        isAlreadyToken: false,
+        onSuccess: (d) async {},
+      );
     } catch (e) {
       print("----------------------error----------------------");
       rethrow;
@@ -71,7 +89,7 @@ class TestApi {
         res = 200;
         print("----------------------I returned 200----------------------");
       }
-    } on DioException catch (e) {
+    } on DioException {
       rethrow;
     }
     return res;
@@ -79,7 +97,7 @@ class TestApi {
 
   Future<int> normalFunc() async {
     try {
-      await Future.delayed(Duration(seconds: 2));
+      await Future.delayed(const Duration(seconds: 2));
     } on Exception catch (e, s) {
       throw TestException(reason: 'lee pae ya mal', stackTrace: s);
     }

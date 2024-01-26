@@ -3,7 +3,6 @@ import "dart:convert";
 import "dart:isolate";
 
 import "package:cryptography/cryptography.dart";
-import "package:dio/dio.dart";
 import "package:flutter/foundation.dart";
 import "package:flutter/services.dart";
 import "package:isar/isar.dart";

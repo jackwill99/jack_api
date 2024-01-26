@@ -15,7 +15,7 @@ class CacheInterceptor extends Interceptor {
     RequestOptions options,
     RequestInterceptorHandler handler,
   ) async {
-    if (IsarService.I.isar == null){
+    if (IsarService.I.isar == null) {
       handler.next(options);
       return;
     }
@@ -40,6 +40,8 @@ class CacheInterceptor extends Interceptor {
             postDataOptions,
           ),
         );
+
+        extra.cacheStatusStream?.add(false);
         handler.next(options);
         return;
       }
@@ -51,9 +53,11 @@ class CacheInterceptor extends Interceptor {
       postData: postDataOptions,
     );
     if (cache == null) {
+      extra.cacheStatusStream?.add(false);
       handler.next(options);
       return;
     }
+    extra.cacheStatusStream?.add(true);
     handler.resolve(
       Response(
         requestOptions: options,
@@ -76,7 +80,7 @@ class CacheInterceptor extends Interceptor {
     Response response,
     ResponseInterceptorHandler handler,
   ) async {
-    if (IsarService.I.isar == null){
+    if (IsarService.I.isar == null) {
       handler.next(response);
       return;
     }
@@ -88,14 +92,16 @@ class CacheInterceptor extends Interceptor {
       handler.next(response);
       return;
     }
-    await CacheService.store(
-      response,
-      extra.schemaName,
-      extra.duration,
-      (response.requestOptions.method != "GET" && (extra.allowPostMethod))
-          ? response.requestOptions.data
-          : null,
-    );
+    if (response.statusCode == 200) {
+      await CacheService.store(
+        response,
+        extra.schemaName,
+        extra.duration,
+        (response.requestOptions.method != "GET" && (extra.allowPostMethod))
+            ? response.requestOptions.data
+            : null,
+      );
+    }
     handler.next(response);
   }
 }

@@ -1,3 +1,5 @@
+import "dart:async";
+
 class JackApiCacheOptions {
   JackApiCacheOptions({
     required this.schemaName,
@@ -19,6 +21,7 @@ class CacheOptionsStatus {
     this.allowPostMethod = false,
     this.isForceRefresh = false,
     this.duration = const Duration(minutes: 3),
+    this.cacheStatusStream,
   });
 
   factory CacheOptionsStatus.fromMap(Map<String, dynamic> map) {
@@ -28,6 +31,7 @@ class CacheOptionsStatus {
       allowPostMethod: map["allowPostMethod"] as bool,
       schemaName: map["schemaName"] as String,
       duration: map["duration"] as Duration,
+      cacheStatusStream: map["cacheStatusStream"] as StreamController<bool>?,
     );
   }
 
@@ -36,6 +40,7 @@ class CacheOptionsStatus {
   final bool allowPostMethod;
   final String schemaName;
   final Duration duration;
+  final StreamController<bool>? cacheStatusStream;
 
   Map<String, dynamic> toMap() {
     return {
@@ -44,6 +49,7 @@ class CacheOptionsStatus {
       "allowPostMethod": allowPostMethod,
       "schemaName": schemaName,
       "duration": duration,
+      "cacheStatusStream": cacheStatusStream,
     };
   }
 }

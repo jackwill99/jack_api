@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:example/api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:jack_api/jack_api.dart';
@@ -38,14 +40,22 @@ class _MyHomePageState extends State<MyHomePage> {
 
   final ApiService api = ApiService();
 
+  StreamController<bool> controller = StreamController<bool>();
+
   @override
   void initState() {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
       await api.init("https://fakestoreapi.com");
+      await api.api.initCacheService();
 
       cacheService = DataCacheService();
+    });
+
+    controller.stream.listen((event) {
+      debugPrint(
+          "----------------------incoming data from stream $event----------------------");
     });
   }
 
@@ -65,21 +75,21 @@ class _MyHomePageState extends State<MyHomePage> {
                 cacheService.store(
                   options: DataCacheOptions(
                       data: "cache service",
-                      expiry: Duration(seconds: 10),
+                      expiry: const Duration(seconds: 10),
                       key: "cacheService",
                       schemaName: "cacheService"),
                 );
               },
-              child: Text("Store data"),
+              child: const Text("Store data"),
             ),
             ElevatedButton(
               onPressed: () async {
                 final data = await cacheService.read(
                     key: "cacheService", schemaName: "cacheService");
                 debugPrint(
-                    "----------------------cache read ${data}----------------------");
+                    "----------------------cache read $data----------------------");
               },
-              child: Text("Read data"),
+              child: const Text("Read data"),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -87,16 +97,18 @@ class _MyHomePageState extends State<MyHomePage> {
                     key: "cacheService",
                     schemaName: "cacheService",
                     modifier: (String data) {
-                      return "${data} haha";
+                      return "$data haha";
                     });
               },
-              child: Text("Update data"),
+              child: const Text("Update data"),
             ),
           ],
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: api.getProducts,
+        onPressed: () async {
+          await api.apiGetProducts(cacheService, controller);
+        },
         tooltip: 'Increment',
         child: const Icon(Icons.add),
       ), // This trailing comma makes auto-formatting nicer for build methods.
