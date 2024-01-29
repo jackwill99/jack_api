@@ -220,6 +220,7 @@ class CacheService {
     BackgroundIsolateBinaryMessenger.ensureInitialized(args[1]);
 
     final isarService = IsarService.I;
+    await isarService.initialize();
 
     await isarService.isar?.writeTxn(() async {
       final count = await isarService.isar?.apiCaches

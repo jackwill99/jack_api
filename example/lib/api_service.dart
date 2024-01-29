@@ -24,23 +24,23 @@ class ApiService {
     await api.query(
       method: "GET",
       path: "/products",
-      //   cacheOptions: JackApiCacheOptions(
-      //     schemaName: "products",
-      //     duration: const Duration(minutes: 10),
-      //   ),
-      //   cacheStatusStream: statusController,
+      cacheOptions: JackApiCacheOptions(
+        schemaName: "products23",
+        duration: const Duration(seconds: 10),
+      ),
+      cacheStatusStream: statusController,
       isAlreadyToken: false,
       onSuccess: (d) async {
         debugPrint("----------------------onSuccess $d----------------------");
         if (d != null) {
           result = d as dynamic;
-          await cacheService.store(
-            options: DataCacheOptions(
-              data: d.toString(),
-              expiry: const Duration(seconds: 10),
-              key: "cacheService2",
-            ),
-          );
+          //   await cacheService.store(
+          //     options: DataCacheOptions(
+          //       data: d.toString(),
+          //       expiry: const Duration(seconds: 10),
+          //       key: "cacheService2",
+          //     ),
+          //   );
         }
       },
     );

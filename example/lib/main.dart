@@ -49,6 +49,7 @@ class _MyHomePageState extends State<MyHomePage> {
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
       await api.init("https://fakestoreapi.com");
       await api.api.initCacheService();
+      api.api.setIsOnline(value: true);
 
       cacheService = DataCacheService();
     });
@@ -111,6 +112,12 @@ class _MyHomePageState extends State<MyHomePage> {
                     });
               },
               child: const Text("Update data"),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                await cacheService.deleteExpiredData();
+              },
+              child: const Text("Delete data"),
             ),
           ],
         ),

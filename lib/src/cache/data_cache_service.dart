@@ -37,7 +37,7 @@ class DataCacheService {
 
   Future<String?> read({
     required String key,
-    void Function(String cache)? whenExpired,
+    void Function(String key)? whenExpired,
   }) async {
     final cache = await _isar?.dataCaches.filter().keyEqualTo(key).findFirst();
 
@@ -53,7 +53,7 @@ class DataCacheService {
         await _isar?.dataCaches.filter().keyEqualTo(key).deleteFirst();
       });
 
-      whenExpired?.call(cache.data);
+      whenExpired?.call(cache.key);
 
       return null;
     }
@@ -75,7 +75,7 @@ class DataCacheService {
     final validData = <String>[];
     for (final cache in caches) {
       /// Cache will delete when device is connected with internet and cache data is expire
-      if ((OnlineStatus.I.isOnline != null || OnlineStatus.I.isOnline!) &&
+      if ((OnlineStatus.I.isOnline != null && OnlineStatus.I.isOnline!) &&
           (cache.expires != null && DateTime.now().isAfter(cache.expires!))) {
         await _isar?.writeTxn(() async {
           await _isar?.dataCaches.filter().keyEqualTo(key).deleteFirst();
@@ -132,7 +132,7 @@ class DataCacheService {
     });
   }
 
-  static Future<void> deleteExpiredData() async {
+  Future<void> deleteExpiredData() async {
     /// create the port to receive data from
     final resultPort = ReceivePort();
     final rootToken = RootIsolateToken.instance!;
@@ -173,6 +173,7 @@ class DataCacheService {
     BackgroundIsolateBinaryMessenger.ensureInitialized(args[1]);
 
     final isarService = IsarService.I;
+    await isarService.initialize();
 
     await isarService.isar?.writeTxn(() async {
       final count = await isarService.isar?.dataCaches
@@ -182,7 +183,7 @@ class DataCacheService {
           .expiresLessThan(DateTime.now())
           .deleteAll();
 
-      debugPrint("\x1B[31m ╔╣  ${args[2]} \x1B[0m");
+      debugPrint("\x1B[31m ╔╣  Expired Data Cache \x1B[0m");
       debugPrint(
         " ║   Deleted expired data of $count , Happy memory saving 😎 ✅ \x1B[0m",
       );
