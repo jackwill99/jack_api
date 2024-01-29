@@ -58,9 +58,9 @@ class CacheOptionsStatus {
 class DataCacheOptions {
   DataCacheOptions({
     required this.data,
-    required this.expiry,
     required this.key,
     required this.schemaName,
+    this.expiry = const Duration(days: 2000),
   });
 
   final String schemaName;
