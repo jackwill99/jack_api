@@ -74,8 +74,7 @@ class _MyHomePageState extends State<MyHomePage> {
               onPressed: () {
                 cacheService.store(
                   options: DataCacheOptions(
-                    data: "cache service",
-                    expiry: const Duration(seconds: 10),
+                    data: "cache service 1",
                     key: "cacheService",
                   ),
                 );
@@ -83,8 +82,19 @@ class _MyHomePageState extends State<MyHomePage> {
               child: const Text("Store data"),
             ),
             ElevatedButton(
+              onPressed: () {
+                cacheService.store(
+                  options: DataCacheOptions(
+                    data: "cache service 2",
+                    key: "cacheService",
+                  ),
+                );
+              },
+              child: const Text("Store same data"),
+            ),
+            ElevatedButton(
               onPressed: () async {
-                final data = await cacheService.read(
+                final data = await cacheService.readAll(
                   key: "cacheService",
                 );
                 debugPrint(

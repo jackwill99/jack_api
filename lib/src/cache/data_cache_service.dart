@@ -47,7 +47,7 @@ class DataCacheService {
     }
 
     /// Cache will delete when device is connected with internet and cache data is expire
-    if ((OnlineStatus.I.isOnline != null || OnlineStatus.I.isOnline!) &&
+    if ((OnlineStatus.I.isOnline != null && OnlineStatus.I.isOnline!) &&
         (cache.expires != null && DateTime.now().isAfter(cache.expires!))) {
       await _isar?.writeTxn(() async {
         await _isar?.dataCaches.filter().keyEqualTo(key).deleteFirst();
