@@ -54,17 +54,17 @@ class CacheOptionsStatus {
   }
 }
 
-/// [key] must be unique
+/// [key] donesn't need to be unique
 class DataCacheOptions {
   DataCacheOptions({
     required this.data,
     required this.key,
-    required this.schemaName,
-    this.expiry = const Duration(days: 2000),
+    this.expiry,
+    this.extra,
   });
 
-  final String schemaName;
   final String key;
   final String data;
-  final Duration expiry;
+  String? extra;
+  Duration? expiry;
 }

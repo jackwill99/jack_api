@@ -36,10 +36,10 @@ class ApiService {
           result = d as dynamic;
           await cacheService.store(
             options: DataCacheOptions(
-                data: d.toString(),
-                expiry: const Duration(seconds: 10),
-                key: "cacheService2",
-                schemaName: "cacheService2"),
+              data: d.toString(),
+              expiry: const Duration(seconds: 10),
+              key: "cacheService2",
+            ),
           );
         }
       },

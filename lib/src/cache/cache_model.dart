@@ -19,11 +19,9 @@ class ApiCache {
 @collection
 class DataCache {
   Id id = Isar.autoIncrement;
-  @Index(unique: true)
-  late String key;
   @Index()
-  late String schemeName;
-
+  late String key;
   late String data;
-  late DateTime expires;
+  String? extra;
+  DateTime? expires;
 }

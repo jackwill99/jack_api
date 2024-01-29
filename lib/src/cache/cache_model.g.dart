@@ -1517,14 +1517,14 @@ const DataCacheSchema = CollectionSchema(
       name: r'expires',
       type: IsarType.dateTime,
     ),
-    r'key': PropertySchema(
+    r'extra': PropertySchema(
       id: 2,
-      name: r'key',
+      name: r'extra',
       type: IsarType.string,
     ),
-    r'schemeName': PropertySchema(
+    r'key': PropertySchema(
       id: 3,
-      name: r'schemeName',
+      name: r'key',
       type: IsarType.string,
     )
   },
@@ -1537,24 +1537,11 @@ const DataCacheSchema = CollectionSchema(
     r'key': IndexSchema(
       id: -4906094122524121629,
       name: r'key',
-      unique: true,
-      replace: false,
-      properties: [
-        IndexPropertySchema(
-          name: r'key',
-          type: IndexType.hash,
-          caseSensitive: true,
-        )
-      ],
-    ),
-    r'schemeName': IndexSchema(
-      id: -6267973034041426503,
-      name: r'schemeName',
       unique: false,
       replace: false,
       properties: [
         IndexPropertySchema(
-          name: r'schemeName',
+          name: r'key',
           type: IndexType.hash,
           caseSensitive: true,
         )
@@ -1576,8 +1563,13 @@ int _dataCacheEstimateSize(
 ) {
   var bytesCount = offsets.last;
   bytesCount += 3 + object.data.length * 3;
+  {
+    final value = object.extra;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
   bytesCount += 3 + object.key.length * 3;
-  bytesCount += 3 + object.schemeName.length * 3;
   return bytesCount;
 }
 
@@ -1589,8 +1581,8 @@ void _dataCacheSerialize(
 ) {
   writer.writeString(offsets[0], object.data);
   writer.writeDateTime(offsets[1], object.expires);
-  writer.writeString(offsets[2], object.key);
-  writer.writeString(offsets[3], object.schemeName);
+  writer.writeString(offsets[2], object.extra);
+  writer.writeString(offsets[3], object.key);
 }
 
 DataCache _dataCacheDeserialize(
@@ -1601,10 +1593,10 @@ DataCache _dataCacheDeserialize(
 ) {
   final object = DataCache();
   object.data = reader.readString(offsets[0]);
-  object.expires = reader.readDateTime(offsets[1]);
+  object.expires = reader.readDateTimeOrNull(offsets[1]);
+  object.extra = reader.readStringOrNull(offsets[2]);
   object.id = id;
-  object.key = reader.readString(offsets[2]);
-  object.schemeName = reader.readString(offsets[3]);
+  object.key = reader.readString(offsets[3]);
   return object;
 }
 
@@ -1618,9 +1610,9 @@ P _dataCacheDeserializeProp<P>(
     case 0:
       return (reader.readString(offset)) as P;
     case 1:
-      return (reader.readDateTime(offset)) as P;
+      return (reader.readDateTimeOrNull(offset)) as P;
     case 2:
-      return (reader.readString(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 3:
       return (reader.readString(offset)) as P;
     default:
@@ -1638,60 +1630,6 @@ List<IsarLinkBase<dynamic>> _dataCacheGetLinks(DataCache object) {
 
 void _dataCacheAttach(IsarCollection<dynamic> col, Id id, DataCache object) {
   object.id = id;
-}
-
-extension DataCacheByIndex on IsarCollection<DataCache> {
-  Future<DataCache?> getByKey(String key) {
-    return getByIndex(r'key', [key]);
-  }
-
-  DataCache? getByKeySync(String key) {
-    return getByIndexSync(r'key', [key]);
-  }
-
-  Future<bool> deleteByKey(String key) {
-    return deleteByIndex(r'key', [key]);
-  }
-
-  bool deleteByKeySync(String key) {
-    return deleteByIndexSync(r'key', [key]);
-  }
-
-  Future<List<DataCache?>> getAllByKey(List<String> keyValues) {
-    final values = keyValues.map((e) => [e]).toList();
-    return getAllByIndex(r'key', values);
-  }
-
-  List<DataCache?> getAllByKeySync(List<String> keyValues) {
-    final values = keyValues.map((e) => [e]).toList();
-    return getAllByIndexSync(r'key', values);
-  }
-
-  Future<int> deleteAllByKey(List<String> keyValues) {
-    final values = keyValues.map((e) => [e]).toList();
-    return deleteAllByIndex(r'key', values);
-  }
-
-  int deleteAllByKeySync(List<String> keyValues) {
-    final values = keyValues.map((e) => [e]).toList();
-    return deleteAllByIndexSync(r'key', values);
-  }
-
-  Future<Id> putByKey(DataCache object) {
-    return putByIndex(r'key', object);
-  }
-
-  Id putByKeySync(DataCache object, {bool saveLinks = true}) {
-    return putByIndexSync(r'key', object, saveLinks: saveLinks);
-  }
-
-  Future<List<Id>> putAllByKey(List<DataCache> objects) {
-    return putAllByIndex(r'key', objects);
-  }
-
-  List<Id> putAllByKeySync(List<DataCache> objects, {bool saveLinks = true}) {
-    return putAllByIndexSync(r'key', objects, saveLinks: saveLinks);
-  }
 }
 
 extension DataCacheQueryWhereSort
@@ -1808,51 +1746,6 @@ extension DataCacheQueryWhere
               indexName: r'key',
               lower: [],
               upper: [key],
-              includeUpper: false,
-            ));
-      }
-    });
-  }
-
-  QueryBuilder<DataCache, DataCache, QAfterWhereClause> schemeNameEqualTo(
-      String schemeName) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IndexWhereClause.equalTo(
-        indexName: r'schemeName',
-        value: [schemeName],
-      ));
-    });
-  }
-
-  QueryBuilder<DataCache, DataCache, QAfterWhereClause> schemeNameNotEqualTo(
-      String schemeName) {
-    return QueryBuilder.apply(this, (query) {
-      if (query.whereSort == Sort.asc) {
-        return query
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'schemeName',
-              lower: [],
-              upper: [schemeName],
-              includeUpper: false,
-            ))
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'schemeName',
-              lower: [schemeName],
-              includeLower: false,
-              upper: [],
-            ));
-      } else {
-        return query
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'schemeName',
-              lower: [schemeName],
-              includeLower: false,
-              upper: [],
-            ))
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'schemeName',
-              lower: [],
-              upper: [schemeName],
               includeUpper: false,
             ));
       }
@@ -1992,8 +1885,24 @@ extension DataCacheQueryFilter
     });
   }
 
+  QueryBuilder<DataCache, DataCache, QAfterFilterCondition> expiresIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'expires',
+      ));
+    });
+  }
+
+  QueryBuilder<DataCache, DataCache, QAfterFilterCondition> expiresIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'expires',
+      ));
+    });
+  }
+
   QueryBuilder<DataCache, DataCache, QAfterFilterCondition> expiresEqualTo(
-      DateTime value) {
+      DateTime? value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
         property: r'expires',
@@ -2003,7 +1912,7 @@ extension DataCacheQueryFilter
   }
 
   QueryBuilder<DataCache, DataCache, QAfterFilterCondition> expiresGreaterThan(
-    DateTime value, {
+    DateTime? value, {
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
@@ -2016,7 +1925,7 @@ extension DataCacheQueryFilter
   }
 
   QueryBuilder<DataCache, DataCache, QAfterFilterCondition> expiresLessThan(
-    DateTime value, {
+    DateTime? value, {
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
@@ -2029,8 +1938,8 @@ extension DataCacheQueryFilter
   }
 
   QueryBuilder<DataCache, DataCache, QAfterFilterCondition> expiresBetween(
-    DateTime lower,
-    DateTime upper, {
+    DateTime? lower,
+    DateTime? upper, {
     bool includeLower = true,
     bool includeUpper = true,
   }) {
@@ -2041,6 +1950,152 @@ extension DataCacheQueryFilter
         includeLower: includeLower,
         upper: upper,
         includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<DataCache, DataCache, QAfterFilterCondition> extraIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'extra',
+      ));
+    });
+  }
+
+  QueryBuilder<DataCache, DataCache, QAfterFilterCondition> extraIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'extra',
+      ));
+    });
+  }
+
+  QueryBuilder<DataCache, DataCache, QAfterFilterCondition> extraEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'extra',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<DataCache, DataCache, QAfterFilterCondition> extraGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'extra',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<DataCache, DataCache, QAfterFilterCondition> extraLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'extra',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<DataCache, DataCache, QAfterFilterCondition> extraBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'extra',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<DataCache, DataCache, QAfterFilterCondition> extraStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'extra',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<DataCache, DataCache, QAfterFilterCondition> extraEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'extra',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<DataCache, DataCache, QAfterFilterCondition> extraContains(
+      String value,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'extra',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<DataCache, DataCache, QAfterFilterCondition> extraMatches(
+      String pattern,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'extra',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<DataCache, DataCache, QAfterFilterCondition> extraIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'extra',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<DataCache, DataCache, QAfterFilterCondition> extraIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'extra',
+        value: '',
       ));
     });
   }
@@ -2227,140 +2282,6 @@ extension DataCacheQueryFilter
       ));
     });
   }
-
-  QueryBuilder<DataCache, DataCache, QAfterFilterCondition> schemeNameEqualTo(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'schemeName',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<DataCache, DataCache, QAfterFilterCondition>
-      schemeNameGreaterThan(
-    String value, {
-    bool include = false,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'schemeName',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<DataCache, DataCache, QAfterFilterCondition> schemeNameLessThan(
-    String value, {
-    bool include = false,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'schemeName',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<DataCache, DataCache, QAfterFilterCondition> schemeNameBetween(
-    String lower,
-    String upper, {
-    bool includeLower = true,
-    bool includeUpper = true,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'schemeName',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<DataCache, DataCache, QAfterFilterCondition>
-      schemeNameStartsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'schemeName',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<DataCache, DataCache, QAfterFilterCondition> schemeNameEndsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'schemeName',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<DataCache, DataCache, QAfterFilterCondition> schemeNameContains(
-      String value,
-      {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.contains(
-        property: r'schemeName',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<DataCache, DataCache, QAfterFilterCondition> schemeNameMatches(
-      String pattern,
-      {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.matches(
-        property: r'schemeName',
-        wildcard: pattern,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<DataCache, DataCache, QAfterFilterCondition>
-      schemeNameIsEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'schemeName',
-        value: '',
-      ));
-    });
-  }
-
-  QueryBuilder<DataCache, DataCache, QAfterFilterCondition>
-      schemeNameIsNotEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'schemeName',
-        value: '',
-      ));
-    });
-  }
 }
 
 extension DataCacheQueryObject
@@ -2394,6 +2315,18 @@ extension DataCacheQuerySortBy on QueryBuilder<DataCache, DataCache, QSortBy> {
     });
   }
 
+  QueryBuilder<DataCache, DataCache, QAfterSortBy> sortByExtra() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'extra', Sort.asc);
+    });
+  }
+
+  QueryBuilder<DataCache, DataCache, QAfterSortBy> sortByExtraDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'extra', Sort.desc);
+    });
+  }
+
   QueryBuilder<DataCache, DataCache, QAfterSortBy> sortByKey() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'key', Sort.asc);
@@ -2403,18 +2336,6 @@ extension DataCacheQuerySortBy on QueryBuilder<DataCache, DataCache, QSortBy> {
   QueryBuilder<DataCache, DataCache, QAfterSortBy> sortByKeyDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'key', Sort.desc);
-    });
-  }
-
-  QueryBuilder<DataCache, DataCache, QAfterSortBy> sortBySchemeName() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'schemeName', Sort.asc);
-    });
-  }
-
-  QueryBuilder<DataCache, DataCache, QAfterSortBy> sortBySchemeNameDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'schemeName', Sort.desc);
     });
   }
 }
@@ -2445,6 +2366,18 @@ extension DataCacheQuerySortThenBy
     });
   }
 
+  QueryBuilder<DataCache, DataCache, QAfterSortBy> thenByExtra() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'extra', Sort.asc);
+    });
+  }
+
+  QueryBuilder<DataCache, DataCache, QAfterSortBy> thenByExtraDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'extra', Sort.desc);
+    });
+  }
+
   QueryBuilder<DataCache, DataCache, QAfterSortBy> thenById() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.asc);
@@ -2468,18 +2401,6 @@ extension DataCacheQuerySortThenBy
       return query.addSortBy(r'key', Sort.desc);
     });
   }
-
-  QueryBuilder<DataCache, DataCache, QAfterSortBy> thenBySchemeName() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'schemeName', Sort.asc);
-    });
-  }
-
-  QueryBuilder<DataCache, DataCache, QAfterSortBy> thenBySchemeNameDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'schemeName', Sort.desc);
-    });
-  }
 }
 
 extension DataCacheQueryWhereDistinct
@@ -2497,17 +2418,17 @@ extension DataCacheQueryWhereDistinct
     });
   }
 
+  QueryBuilder<DataCache, DataCache, QDistinct> distinctByExtra(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'extra', caseSensitive: caseSensitive);
+    });
+  }
+
   QueryBuilder<DataCache, DataCache, QDistinct> distinctByKey(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'key', caseSensitive: caseSensitive);
-    });
-  }
-
-  QueryBuilder<DataCache, DataCache, QDistinct> distinctBySchemeName(
-      {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'schemeName', caseSensitive: caseSensitive);
     });
   }
 }
@@ -2526,21 +2447,21 @@ extension DataCacheQueryProperty
     });
   }
 
-  QueryBuilder<DataCache, DateTime, QQueryOperations> expiresProperty() {
+  QueryBuilder<DataCache, DateTime?, QQueryOperations> expiresProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'expires');
+    });
+  }
+
+  QueryBuilder<DataCache, String?, QQueryOperations> extraProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'extra');
     });
   }
 
   QueryBuilder<DataCache, String, QQueryOperations> keyProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'key');
-    });
-  }
-
-  QueryBuilder<DataCache, String, QQueryOperations> schemeNameProperty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'schemeName');
     });
   }
 }
