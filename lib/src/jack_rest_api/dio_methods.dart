@@ -151,20 +151,23 @@ class JackApiMethods {
 
   void checkToken(
     String? previousToken,
-    String? newToken, {
+    String? newToken,
+    String? tokenKey, {
     required Dio dio,
     required bool isAlreadyToken,
   }) {
     if (isAlreadyToken) {
       if (newToken != null) {
-        dio.options.headers["Authorization"] = "Bearer $newToken";
+        dio.options.headers[tokenKey ?? "Authorization"] =
+            "${tokenKey == null ? "Bearer " : ""}$newToken";
       } else if (previousToken == null) {
         printError(
           "You have no already token. Set up your token before calling this API ! 😅",
         );
         throw "Error Throwing : you have no token";
       } else {
-        dio.options.headers["Authorization"] = "Bearer $previousToken";
+        dio.options.headers[tokenKey ?? "Authorization"] =
+            "${tokenKey == null ? "Bearer " : ""}$previousToken";
       }
     } else {
       if (newToken == null) {
@@ -172,7 +175,8 @@ class JackApiMethods {
           "You are calling the un-authenticated public API. You have no token.",
         );
       } else {
-        dio.options.headers["Authorization"] = "Bearer $newToken";
+        dio.options.headers[tokenKey ?? "Authorization"] =
+            "${tokenKey == null ? "Bearer " : ""}$newToken";
       }
     }
   }

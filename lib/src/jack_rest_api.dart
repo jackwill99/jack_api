@@ -93,7 +93,6 @@ class JackRestApi {
   /// Public method to store token value
   set myToken(String? value) {
     _token = value;
-    _restApiData.token = value;
 
     if (value != null) {
       _restApiData.dio.options.headers["Authorization"] = "Bearer $myToken";
@@ -105,7 +104,6 @@ class JackRestApi {
   /// Public method to store token value
   void myTokenWithKey({required key, String? value}) {
     _token = value;
-    _restApiData.token = value;
 
     if (value != null) {
       _restApiData.dio.options.headers[key] = "$myToken";
@@ -178,6 +176,7 @@ class JackRestApi {
     required CallBackFunc<T> onSuccess,
     Map<String, dynamic>? data,
     String? contentType,
+    String? tokenKey,
     String? token,
     bool isContent = false,
     bool isAlreadyToken = true,
@@ -193,7 +192,13 @@ class JackRestApi {
       tempDio,
       null,
     );
-    _checkToken(tempDio, token, isAlreadyToken);
+    _restApiData.methods.checkToken(
+      myToken,
+      token,
+      tokenKey,
+      isAlreadyToken: isAlreadyToken,
+      dio: tempDio,
+    );
     final extra =
         _restApiData.methods.setUpCacheOption(cacheOptions, cacheStatusStream);
 
@@ -239,6 +244,7 @@ class JackRestApi {
     StreamController<bool>? cacheStatusStream,
     String? basePath,
     List<String>? filePaths,
+    String? tokenKey,
     String? token,
     bool isContent = false,
     bool isAlreadyToken = true,
@@ -273,7 +279,13 @@ class JackRestApi {
       tempDio,
       "multipart/form-data ; boundary=${formData.boundary}",
     );
-    _checkToken(tempDio, token, isAlreadyToken);
+    _restApiData.methods.checkToken(
+      myToken,
+      token,
+      tokenKey,
+      isAlreadyToken: isAlreadyToken,
+      dio: tempDio,
+    );
     final extra =
         _restApiData.methods.setUpCacheOption(cacheOptions, cacheStatusStream);
 
@@ -339,19 +351,6 @@ class JackRestApi {
       onProgress: onReceiveProgress,
       onTimeOutError: onTimeOutError,
       onError: onError,
-    );
-  }
-
-  void _checkToken(
-    Dio tempDio,
-    String? token,
-    bool isAlreadyToken,
-  ) {
-    _restApiData.methods.checkToken(
-      myToken,
-      token,
-      isAlreadyToken: isAlreadyToken,
-      dio: tempDio,
     );
   }
 }

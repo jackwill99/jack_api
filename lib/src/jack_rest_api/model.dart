@@ -6,13 +6,10 @@ class RestApiData {
   RestApiData({
     required this.dio,
     required this.methods,
-    this.token,
   });
 
   final Dio dio;
   final JackApiMethods methods;
-
-  String? token;
 }
 
 class OnlineStatus {
