@@ -102,6 +102,20 @@ class JackRestApi {
     }
   }
 
+  /// Public method to store token value
+  void myTokenWithKey({required key, String? value}) {
+    _token = value;
+    _restApiData.token = value;
+
+    if (value != null) {
+      _restApiData.dio.options.headers[key] = "$myToken";
+    } else {
+      if (_restApiData.dio.options.headers.containsKey(key)) {
+        _restApiData.dio.options.headers.remove(key);
+      }
+    }
+  }
+
   /// Public method to change internet connection
   void setIsOnline({bool? value}) {
     OnlineStatus.I.isOnline = value;
