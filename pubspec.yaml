@@ -9,7 +9,7 @@ environment:
 
 dependencies:
   cryptography:
-  dio:
+  dio: ^5.4.1
   dio_http2_adapter:
   flutter:
     sdk: flutter
