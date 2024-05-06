@@ -15,7 +15,7 @@ dependencies:
     sdk: flutter
   isar: ^3.1.0+1
   isar_flutter_libs:
-  path_provider: 2.1.2
+  path_provider: ^2.1.3
   pretty_dio_logger:
 
 dev_dependencies:
