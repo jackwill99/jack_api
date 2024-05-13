@@ -176,6 +176,7 @@ class JackRestApi {
     required CallBackFunc<T> onSuccess,
     Map<String, dynamic>? data,
     String? contentType,
+    String? calculatedHmac,
     String? tokenKey,
     String? token,
     bool isContent = false,
@@ -192,6 +193,9 @@ class JackRestApi {
       tempDio,
       null,
     );
+
+    _restApiData.methods.setXSignatureHeader(tempDio, calculatedHmac);
+
     _restApiData.methods.checkToken(
       myToken,
       token,

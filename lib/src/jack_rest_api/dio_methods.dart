@@ -149,6 +149,15 @@ class JackApiMethods {
     }
   }
 
+  void setXSignatureHeader(
+    Dio dio,
+    String? calculatedHmac,
+  ) {
+    if (calculatedHmac != null) {
+      dio.options.headers["x-signature"] = calculatedHmac;
+    }
+  }
+
   void checkToken(
     String? previousToken,
     String? newToken,
