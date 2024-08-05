@@ -191,7 +191,6 @@ class CacheService {
       await Isolate.spawn(
         _calExpiredData,
         [resultPort.sendPort, rootToken, schemaName],
-        errorsAreFatal: true,
         onExit: resultPort.sendPort,
         onError: resultPort.sendPort,
       );

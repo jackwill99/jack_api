@@ -30,12 +30,15 @@ class JackApiMethods {
     CallBackNoArgs? oldTimeOutError,
     CallBackNoArgs? oldError,
   }) async {
-    bool isGetMethod = false;
+    bool isNeedData = false;
     // checking the query method
-    if (method.toLowerCase() == "GET".toLowerCase()) {
-      isGetMethod = true;
+    if (method.toLowerCase() == "GET".toLowerCase() ||
+        method.toLowerCase() == "DELETE".toLowerCase()) {
+      isNeedData = true;
     }
-    if (method.toLowerCase() != "GET".toLowerCase() && data == null) {
+    if (method.toLowerCase() != "GET".toLowerCase() &&
+        method.toLowerCase() != "DELETE".toLowerCase() &&
+        data == null) {
       printError("You need data to send server 🥹");
       throw "Error Throwing : You need data to send server 🥹";
     }
@@ -54,7 +57,7 @@ class JackApiMethods {
         name: method,
         path: path,
         extra: extra,
-        data: isGetMethod ? null : data,
+        data: isNeedData ? null : data,
       );
 
       if (isContent) {

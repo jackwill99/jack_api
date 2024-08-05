@@ -144,7 +144,6 @@ class DataCacheService {
       await Isolate.spawn(
         _calExpiredData,
         [resultPort.sendPort, rootToken],
-        errorsAreFatal: true,
         onExit: resultPort.sendPort,
         onError: resultPort.sendPort,
       );
