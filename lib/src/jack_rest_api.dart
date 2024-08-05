@@ -176,7 +176,12 @@ class JackRestApi {
     required CallBackFunc<T> onSuccess,
     Map<String, dynamic>? data,
     String? contentType,
+    // TODO(jack): Remove at v1.0.5
+    @Deprecated(
+      "'calculatedHmac' is deprecated and shouldn't be used and we'll remove at v1.0.5. Use 'xSignature'.",
+    )
     String? calculatedHmac,
+    String? xSignature,
     String? tokenKey,
     String? token,
     bool isContent = false,
@@ -194,7 +199,8 @@ class JackRestApi {
       null,
     );
 
-    _restApiData.methods.setXSignatureHeader(tempDio, calculatedHmac);
+    _restApiData.methods
+        .setXSignatureHeader(tempDio, calculatedHmac ?? xSignature);
 
     _restApiData.methods.checkToken(
       myToken,
