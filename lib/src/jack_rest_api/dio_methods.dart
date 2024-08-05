@@ -30,19 +30,6 @@ class JackApiMethods {
     CallBackNoArgs? oldTimeOutError,
     CallBackNoArgs? oldError,
   }) async {
-    bool isNeedData = false;
-    // checking the query method
-    if (method.toLowerCase() == "GET".toLowerCase() ||
-        method.toLowerCase() == "DELETE".toLowerCase()) {
-      isNeedData = true;
-    }
-    if (method.toLowerCase() != "GET".toLowerCase() &&
-        method.toLowerCase() != "DELETE".toLowerCase() &&
-        data == null) {
-      printError("You need data to send server 🥹");
-      throw "Error Throwing : You need data to send server 🥹";
-    }
-
     if (!await checkBeforeValidate(
       beforeValidate: beforeValidate,
       oldBeforeValidate: oldBeforeValidate,
@@ -57,7 +44,7 @@ class JackApiMethods {
         name: method,
         path: path,
         extra: extra,
-        data: isNeedData ? null : data,
+        data: data,
       );
 
       if (isContent) {
@@ -225,6 +212,7 @@ class JackApiMethods {
         return await dio.delete(
           path,
           options: options,
+          data: data,
         );
       default:
         throw "Error Throwing : API method does not correct. Use all capital letter";
