@@ -176,7 +176,7 @@ class JackRestApi {
     required CallBackFunc<T> onSuccess,
     Map<String, dynamic>? data,
     String? contentType,
-    // TODO(jack): Remove at v1.0.5
+    // TODO(jack): Remove at v1.0.6
     @Deprecated(
       "'calculatedHmac' is deprecated and shouldn't be used and we'll remove at v1.0.5. Use 'xSignature'.",
     )

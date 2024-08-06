@@ -208,6 +208,12 @@ class JackApiMethods {
           data: data,
           options: options,
         );
+      case "PATCH":
+        return await dio.patch(
+          path,
+          options: options,
+          data: data,
+        );
       case "DELETE":
         return await dio.delete(
           path,
