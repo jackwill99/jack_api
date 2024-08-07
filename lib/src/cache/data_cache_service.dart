@@ -132,6 +132,14 @@ class DataCacheService {
     });
   }
 
+  Future<void>? reset() {
+    return _isar?.dataCaches.clear();
+  }
+
+  Future<int>? getSize() {
+    return _isar?.dataCaches.getSize();
+  }
+
   Future<void> deleteExpiredData() async {
     /// create the port to receive data from
     final resultPort = ReceivePort();
