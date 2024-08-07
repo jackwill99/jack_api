@@ -166,7 +166,7 @@ class CacheService {
 
   static Future<void> resetDb() async {
     final isar = IsarService.I.isar;
-    await isar?.clear();
+    await isar?.writeTxn(() => isar.clear());
     debugPrint("\x1B[30;1m ╔╣   Resetting The ApiCache Database \x1B[0m");
     debugPrint(
       "\x1B[30;1m ║   Successfully deleted all of the api cache data from your system. Feel free to cache 🛸 ✅ \x1B[0m",
@@ -176,7 +176,7 @@ class CacheService {
 
   static Future<int?> getSize() async {
     final isar = IsarService.I.isar;
-    return await isar?.getSize();
+    return isar?.writeTxn<int?>(() => isar.getSize());
   }
 
   static Future<void> removeExpiredData(String schemaName) async {

@@ -132,12 +132,16 @@ class DataCacheService {
     });
   }
 
-  Future<void>? reset() {
-    return _isar?.dataCaches.clear();
+  Future<void> reset() async {
+    await _isar?.writeTxn(() async {
+      await _isar?.dataCaches.clear();
+    });
   }
 
-  Future<int>? getSize() {
-    return _isar?.dataCaches.getSize();
+  Future<int?>? getSize() {
+    return _isar?.writeTxn<int?>(() async {
+      return _isar?.dataCaches.getSize();
+    });
   }
 
   Future<void> deleteExpiredData() async {
