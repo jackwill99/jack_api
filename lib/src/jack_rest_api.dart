@@ -253,7 +253,7 @@ class JackRestApi {
     JackApiCacheOptions? cacheOptions,
     StreamController<bool>? cacheStatusStream,
     String? basePath,
-    List<String>? filePaths,
+    Map<String, List<String>>? filePaths,
     String? tokenKey,
     String? token,
     bool isContent = false,
@@ -271,12 +271,13 @@ class JackRestApi {
     // form data
     final formData = FormData.fromMap(data);
     if (filePaths != null) {
-      for (final i in filePaths) {
+      final filePathKey = filePaths.keys.toList()[0];
+      for (final i in filePaths[filePathKey]!) {
         final fileName = i.split("/").last;
         try {
           final file = await MultipartFile.fromFile(i, filename: fileName);
           formData.files.add(
-            MapEntry(fileName, file),
+            MapEntry(filePathKey, file),
           );
         } on Exception catch (_) {
           printError("Error throwing in formData from file of $i");
