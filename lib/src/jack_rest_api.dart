@@ -3,7 +3,6 @@ import "dart:async";
 import "package:dio/dio.dart";
 import "package:dio_http2_adapter/dio_http2_adapter.dart";
 import "package:flutter/foundation.dart";
-import "package:get_it/get_it.dart";
 import "package:jack_api/src/cache/cache_interceptor.dart";
 import "package:jack_api/src/cache/cache_options.dart";
 import "package:jack_api/src/cache/cache_service.dart";
@@ -30,35 +29,49 @@ class JackRestApi {
     Future<void> Function()? onError,
     bool useHttp2 = false,
   }) {
-    RestApiData.isUseHttp2 = useHttp2;
+    _isUseHttp2 = useHttp2;
+    _baseUrl = baseUrl;
+    _connectTimeout = connectTimeout;
 
-    _init(
-      baseUrl: baseUrl,
-      connectTimeout: connectTimeout,
-    );
     _onBeforeValidate = onBeforeValidate;
     _onAfterValidate = onAfterValidate;
     _onTimeOutError = onTimeOutError;
-
     _onError = onError;
+
+    _init(
+      baseUrl: baseUrl,
+    );
   }
 
-  String? get myToken => RestApiData.token;
-  set myToken(String? value) {
-    RestApiData.token = value;
-    if (value != null) {
-      RestApiData.dio.options.headers["Authorization"] = "Bearer $myToken";
-    }
-  }
+  JackRestApi copyWith({
+    String? baseUrl,
+    int? connectTimeout,
+    Future<bool> Function()? onBeforeValidate,
+    CallBack? onAfterValidate,
+    Future<void> Function()? onTimeOutError,
+    Future<void> Function()? onError,
+    bool? useHttp2,
+  }) =>
+      JackRestApi(
+        baseUrl: baseUrl ?? _baseUrl,
+        connectTimeout: connectTimeout ?? _connectTimeout,
+        useHttp2: useHttp2 ?? _isUseHttp2,
+        onBeforeValidate: onBeforeValidate ?? _onBeforeValidate,
+        onAfterValidate: onAfterValidate ?? _onAfterValidate,
+        onTimeOutError: onTimeOutError ?? _onTimeOutError,
+        onError: onError ?? _onError,
+      );
 
-  // Public method to initialize
-  Future<void> init() async{
-    await GetIt.I.registerSingleton(IsarService()).initialize();
-  }
+  late bool _isUseHttp2;
+  int? _connectTimeout;
+  late String _baseUrl;
+  String? _token;
+  late RestApiData _restApiData;
 
-  void setIsOnline({bool? value}) {
-    RestApiData.isOnline = value;
-  }
+  /// Dio client
+  late Dio _dio;
+
+  Dio get dio => _dio;
 
   CallBackWithReturn? _onBeforeValidate;
 
@@ -68,21 +81,59 @@ class JackRestApi {
 
   CallBackNoArgs? _onError;
 
+  String? get myToken => _token;
+
+  /// Public method to initialize
+  Future<void> initCacheService() async {
+    if (IsarService.I.isar == null) {
+      await IsarService.I.initialize();
+    }
+  }
+
+  /// Public method to store token value
+  set myToken(String? value) {
+    _token = value;
+
+    if (value != null) {
+      _restApiData.dio.options.headers["Authorization"] = "Bearer $myToken";
+    } else {
+      _restApiData.dio.options.headers.remove("Authorization");
+    }
+  }
+
+  /// Public method to store token value
+  void myTokenWithKey({required key, String? value}) {
+    _token = value;
+
+    if (value != null) {
+      _restApiData.dio.options.headers[key] = "$myToken";
+    } else {
+      if (_restApiData.dio.options.headers.containsKey(key)) {
+        _restApiData.dio.options.headers.remove(key);
+      }
+    }
+  }
+
+  /// Public method to change internet connection
+  void setIsOnline({bool? value}) {
+    OnlineStatus.I.isOnline = value;
+  }
+
   void _init({
     required String baseUrl,
-    int? connectTimeout,
   }) {
-    final connectionTimeout = connectTimeout == null
+    final connectionTimeout = _connectTimeout == null
         ? const Duration(seconds: 20)
-        : Duration(seconds: connectTimeout);
-    RestApiData.dio = Dio(
+        : Duration(seconds: _connectTimeout!);
+    _dio = Dio(
       BaseOptions(
         baseUrl: baseUrl,
         connectTimeout: connectionTimeout,
       ),
     )..options.headers["Content-Type"] = "application/json";
-    if (RestApiData.isUseHttp2) {
-      RestApiData.dio.httpClientAdapter = Http2Adapter(
+
+    if (_isUseHttp2) {
+      dio.httpClientAdapter = Http2Adapter(
         ConnectionManager(
           idleTimeout: connectionTimeout,
           onClientCreate: (_, config) => config.onBadCertificate = (_) => true,
@@ -91,17 +142,18 @@ class JackRestApi {
     }
 
     if (!kReleaseMode) {
-      RestApiData.dio.interceptors.add(
+      dio.interceptors.add(
         PrettyDioLogger(
           requestBody: true,
         ),
       );
     }
-    RestApiData.dio.interceptors.add(
+    dio.interceptors.add(
       CacheInterceptor(),
     );
-    RestApiData.methods =
-        JackApiMethods(baseUrl: baseUrl, dio: RestApiData.dio);
+    final methods = JackApiMethods(baseUrl: baseUrl);
+
+    _restApiData = RestApiData(dio: dio, methods: methods);
   }
 
   /// [method] is the method of API request
@@ -109,8 +161,6 @@ class JackRestApi {
   /// [path] is the api endPoint
   ///
   /// [onSuccess] is the callBack function when you receive successfully the data from server
-  ///
-  /// [basePath] is to modify the API base path of your project
   ///
   /// [contentType] is also to modify the content type of your API request
   ///
@@ -120,49 +170,54 @@ class JackRestApi {
   ///
   /// [isAlreadyToken] default is true, it will take the default token and throw an error when you have not default token. You should use this true after setting up the default token
   ///
-  /// Below methods are overriding the existing methods that you created while instantiating class 😤
-  ///
-  // / [onBeforeValidate] , [onBeforeValidateSync] is to check before calling the api request eg. Checking Internet connection before request to api
-  // /
-  // / [isDefaultBeforeValidate] default is true that means when you does not declare above two methods, default method (i.e in the instantiated class) will be use
-  // /
-  // / [onAfterValidate] , [onAfterValidateSync] is to check after calling the api request eg. Checking authorized or 400 error
-  // /
-  // / [isDefaultAfterValidate] default is true that means when you does not declare above two methods, default method (i.e in the instantiated class) will be use
-  // /
-  // / [onTimeOutError], [onTimeOutErrorSync] is to catch the time out error
-  // /
-  // / [isDefaultTimeOutError] default is true that means when you does not declare above two methods, default method (i.e in the instantiated class) will be use
-  // /
-  // / [onError], [onErrorSync] are to catch the error code from server
-  // /
-  // / [isDefaultError] default is true that means when you does not declare above two methods, default method (i.e in the instantiated class) will be use
-  // /
-  Future<void> query<T>({
+  Future<Response?> query<T>({
     required String method,
     required String path,
     required CallBackFunc<T> onSuccess,
-    String? basePath,
     Map<String, dynamic>? data,
     String? contentType,
+    // TODO(jack): Remove at v1.0.6
+    @Deprecated(
+      "'calculatedHmac' is deprecated and shouldn't be used and we'll remove at v1.0.5. Use 'xSignature'.",
+    )
+    String? calculatedHmac,
+    String? xSignature,
+    String? tokenKey,
     String? token,
     bool isContent = false,
     bool isAlreadyToken = true,
     JackApiCacheOptions? cacheOptions,
+    StreamController<bool>? cacheStatusStream,
     BeforeCallBackConfig<bool?>? beforeValidate,
     AfterCallBackConfig<T, bool?>? afterValidate,
     CallBackConfig? timeOutError,
     CallBackConfig? error,
   }) async {
-    RestApiData.methods.setConfig(basePath, contentType);
-    _checkToken(token, isAlreadyToken);
-    final extra = RestApiData.methods.setUpCacheOption(cacheOptions);
+    final tempDio = dio;
+    _restApiData.methods.changeContentType(
+      tempDio,
+      null,
+    );
 
-    await RestApiData.methods.query<T, bool?>(
+    _restApiData.methods
+        .setXSignatureHeader(tempDio, calculatedHmac ?? xSignature);
+
+    _restApiData.methods.checkToken(
+      myToken,
+      token,
+      tokenKey,
+      isAlreadyToken: isAlreadyToken,
+      dio: tempDio,
+    );
+    final extra =
+        _restApiData.methods.setUpCacheOption(cacheOptions, cacheStatusStream);
+
+    return await _restApiData.methods.query<T, bool?>(
       method: method,
       path: path,
       data: data,
       isContent: isContent,
+      dio: tempDio,
       onSuccess: onSuccess,
       beforeValidate: beforeValidate ?? BeforeCallBackConfig(),
       afterValidate: afterValidate ?? AfterCallBackConfig(),
@@ -190,32 +245,16 @@ class JackRestApi {
   ///
   /// [isAlreadyToken] default is true, it will take the default token and throw an error when you have not default token. You should use this true after setting up the default token
   ///
-  /// Below methods are overriding the existing methods that you created while instantiating class 😤
-  ///
-  // / [onBeforeValidate] , [onBeforeValidateSync] is to check before calling the api request eg. Checking Internet connection before request to api
-  // /
-  // / [isDefaultBeforeValidate] default is true that means when you does not declare above two methods, default method (i.e in the instantiated class) will be use
-  // /
-  // / [onAfterValidate] , [onAfterValidateSync] is to check after calling the api request eg. Checking authorized or 400 error
-  // /
-  // / [isDefaultAfterValidate] default is true that means when you does not declare above two methods, default method (i.e in the instantiated class) will be use
-  // /
-  // / [onTimeOutError], [onTimeOutErrorSync] is to catch the time out error
-  // /
-  // / [isDefaultTimeOutError] default is true that means when you does not declare above two methods, default method (i.e in the instantiated class) will be use
-  // /
-  // / [onError], [onErrorSync] are to catch the error code from server
-  // /
-  // / [isDefaultError] default is true that means when you does not declare above two methods, default method (i.e in the instantiated class) will be use
-  // /
   Future<void> postWithForm<T>({
     required String method,
     required String path,
     required Map<String, dynamic> data,
     required CallBackFunc<T> onSuccess,
     JackApiCacheOptions? cacheOptions,
+    StreamController<bool>? cacheStatusStream,
     String? basePath,
-    List<String>? filePaths,
+    Map<String, List<String>>? filePaths,
+    String? tokenKey,
     String? token,
     bool isContent = false,
     bool isAlreadyToken = true,
@@ -232,12 +271,13 @@ class JackRestApi {
     // form data
     final formData = FormData.fromMap(data);
     if (filePaths != null) {
-      for (final i in filePaths) {
+      final filePathKey = filePaths.keys.toList()[0];
+      for (final i in filePaths[filePathKey]!) {
         final fileName = i.split("/").last;
         try {
           final file = await MultipartFile.fromFile(i, filename: fileName);
           formData.files.add(
-            MapEntry(fileName, file),
+            MapEntry(filePathKey, file),
           );
         } on Exception catch (_) {
           printError("Error throwing in formData from file of $i");
@@ -245,18 +285,27 @@ class JackRestApi {
       }
     }
 
-    RestApiData.methods.setConfig(
-      basePath,
+    final tempDio = dio;
+    _restApiData.methods.changeContentType(
+      tempDio,
       "multipart/form-data ; boundary=${formData.boundary}",
     );
-    _checkToken(token, isAlreadyToken);
-    final extra = RestApiData.methods.setUpCacheOption(cacheOptions);
+    _restApiData.methods.checkToken(
+      myToken,
+      token,
+      tokenKey,
+      isAlreadyToken: isAlreadyToken,
+      dio: tempDio,
+    );
+    final extra =
+        _restApiData.methods.setUpCacheOption(cacheOptions, cacheStatusStream);
 
-    await RestApiData.methods.query<T, bool?>(
+    await _restApiData.methods.query<T, bool?>(
       method: method,
       path: path,
       data: formData,
       isContent: isContent,
+      dio: dio,
       onSuccess: onSuccess,
       beforeValidate: beforeValidate ?? BeforeCallBackConfig(),
       afterValidate: afterValidate ?? AfterCallBackConfig(),
@@ -276,49 +325,43 @@ class JackRestApi {
 
   /// This will get the size of the whole db in bytes 😅
   ///
-  Future<int> cacheSize() async {
+  Future<int?> cacheSize() async {
     return await CacheService.getSize();
+  }
+
+  /// Search and delete the cached api data
+  ///
+  Future<void> searchAndDelete({
+    required String key,
+    dynamic data,
+  }) async {
+    await CacheService.searchAndDelete(key, data);
   }
 
   /// [url] is the fully https url link to download media
   ///
   /// [savePath] is the fully file path including file name and extension
   ///
-  /// [onTimeOutError], [onTimeOutErrorSync] is to catch the time out error
+  /// [onTimeOutError] is to catch the time out error
   ///
-  /// [isDefaultTimeOutError] default is true that means when you does not declare above two methods, default method (i.e in the instantiated class) will be use
+  /// [onError] are to catch the error code from server
   ///
-  /// [onError], [onErrorSync] are to catch the error code from server
   ///
-  /// [isDefaultError] default is true that means when you does not declare above two methods, default method (i.e in the instantiated class) will be use
-  ///
-  Future<String?> download({
+  static Future<String?> download({
     required String url,
     required String savePath,
-    void Function()? onTimeOutErrorSync,
-    Future<void> Function()? onTimeOutError,
-    bool isDefaultTimeOutError = true,
-    void Function()? onErrorSync,
-    Future<void> Function()? onError,
-    bool isDefaultError = true,
+    void Function(double progress)? onReceiveProgress,
+    FutureOr<void> Function()? onTimeOutError,
+    FutureOr<void> Function()? onError,
   }) async {
-    return await RestApiData.methods.download(
+    final tempDio = Dio();
+    return await JackApiMethods.download(
       url: url,
       savePath: savePath,
-      onTimeOutError:
-          isDefaultTimeOutError ? onTimeOutError ?? _onTimeOutError : null,
-      onError: isDefaultError ? onError ?? _onError : null,
-    );
-  }
-
-  void _checkToken(
-    String? token,
-    bool isAlreadyToken,
-  ) {
-    RestApiData.methods.checkToken(
-      myToken,
-      token,
-      isAlreadyToken: isAlreadyToken,
+      dio: tempDio,
+      onProgress: onReceiveProgress,
+      onTimeOutError: onTimeOutError,
+      onError: onError,
     );
   }
 }

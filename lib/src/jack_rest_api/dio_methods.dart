@@ -1,3 +1,5 @@
+import "dart:async";
+
 import "package:dio/dio.dart";
 import "package:jack_api/src/cache/cache_options.dart";
 import "package:jack_api/src/jack_rest_api/model.dart";
@@ -7,52 +9,42 @@ import "package:jack_api/src/util.dart";
 class JackApiMethods {
   JackApiMethods({
     required this.baseUrl,
-    required this.dio,
   });
 
   String baseUrl;
-  Dio dio;
 
-  Future<void> query<T, R>({
+  Future<Response?> query<T, R>({
     required String method,
     required String path,
     required bool isContent,
+    required Dio dio,
     required CallBackFunc<T> onSuccess,
     required BeforeCallBackConfig<bool?> beforeValidate,
     required AfterCallBackConfig<T, bool?> afterValidate,
     required CallBackConfig timeOutError,
     required CallBackConfig error,
-    required Map<String, dynamic> extra,
+    CacheOptionsStatus? extra,
     dynamic data,
     CallBackWithReturn? oldBeforeValidate,
     CallBack? oldAfterValidate,
     CallBackNoArgs? oldTimeOutError,
     CallBackNoArgs? oldError,
   }) async {
-    bool isGetMethod = false;
-    // checking the query method
-    if (method.toLowerCase() == "GET".toLowerCase()) {
-      isGetMethod = true;
-    }
-    if (method.toLowerCase() != "GET".toLowerCase() && data == null) {
-      printError("You need data to send server 🥹");
-      throw "Error Throwing : You need data to send server 🥹";
-    }
-
     if (!await checkBeforeValidate(
       beforeValidate: beforeValidate,
       oldBeforeValidate: oldBeforeValidate,
     )) {
-      return;
+      return null;
     }
 
     // start to call api request
     try {
       final Response response = await _dioMethod(
+        dio: dio,
         name: method,
         path: path,
         extra: extra,
-        data: isGetMethod ? null : data,
+        data: data,
       );
 
       if (isContent) {
@@ -66,10 +58,12 @@ class JackApiMethods {
         afterValidate: afterValidate,
         oldAfterValidate: oldAfterValidate,
       )) {
-        return;
+        return null;
       }
 
       await onSuccess(responseData);
+
+      return response;
     } on DioException catch (e) {
       if (e.type == DioExceptionType.connectionTimeout) {
         await checkTimeOut(
@@ -79,56 +73,63 @@ class JackApiMethods {
       } else {
         printError("Dio Excepition error -->");
         await checkError(error: error, oldError: oldError);
-      }
-    }
-  }
-
-  Future<String?> download({
-    required String url,
-    required String savePath,
-    void Function()? onTimeOutErrorSync,
-    Future<void> Function()? onTimeOutError,
-    void Function()? onErrorSync,
-    Future<void> Function()? onError,
-  }) async {
-    try {
-      await dio.download(url, savePath);
-      return savePath;
-    } on DioException catch (e) {
-      if (e.type == DioExceptionType.connectionTimeout) {
-        await onTimeOutError?.call();
-        onTimeOutErrorSync?.call();
-      } else {
-        printError("Dio Excepition error -->");
-        await onError?.call();
-        onErrorSync?.call();
+        rethrow;
       }
     }
     return null;
   }
 
-  Map<String, dynamic> setUpCacheOption(JackApiCacheOptions? value) {
-    final options = <String, dynamic>{};
-    if (value == null) {
-      options["enableCache"] = false;
-      options["isForceRefresh"] = false;
-      options["allowPostMethod"] = false;
-      options["isImage"] = false;
-      options["schemaName"] = "";
-    } else {
-      options["enableCache"] = true;
-      options["isForceRefresh"] = value.isForceRefresh;
-      options["allowPostMethod"] = value.allowPostMethod;
-      options["isImage"] = value.isImage;
-      options["schemaName"] = value.schemaName;
-      options["duration"] = value.duration;
+  static Future<String?> download({
+    required String url,
+    required String savePath,
+    required Dio dio,
+    void Function(double progress)? onProgress,
+    FutureOr<void> Function()? onTimeOutError,
+    FutureOr<void> Function()? onError,
+  }) async {
+    try {
+      await dio.download(
+        url,
+        savePath,
+        onReceiveProgress: onProgress == null
+            ? null
+            : (received, total) {
+                final progress = (received / total) * 100;
+                onProgress(progress);
+              },
+      );
+      return savePath;
+    } on DioException catch (e) {
+      if (e.type == DioExceptionType.connectionTimeout) {
+        await onTimeOutError?.call();
+      } else {
+        printError("Dio Exception error -->");
+        await onError?.call();
+      }
     }
-
-    return options;
+    return null;
   }
 
-  void setConfig(
-    String? basePath,
+  CacheOptionsStatus setUpCacheOption(
+    JackApiCacheOptions? value,
+    StreamController<bool>? cacheStatusStream,
+  ) {
+    if (value == null) {
+      return CacheOptionsStatus(cacheEnable: false, schemaName: "");
+    } else {
+      return CacheOptionsStatus(
+        cacheEnable: true,
+        schemaName: value.schemaName,
+        isForceRefresh: value.isForceRefresh,
+        allowPostMethod: value.allowPostMethod,
+        duration: value.duration,
+        cacheStatusStream: cacheStatusStream,
+      );
+    }
+  }
+
+  void changeContentType(
+    Dio dio,
     String? contentType,
   ) {
     if (contentType != null) {
@@ -136,27 +137,36 @@ class JackApiMethods {
     } else {
       dio.options.headers["Content-Type"] = "application/json";
     }
+  }
 
-    if (basePath == null) {
-      dio.options.baseUrl = baseUrl;
-    } else {
-      dio.options.baseUrl = basePath;
+  void setXSignatureHeader(
+    Dio dio,
+    String? xSignature,
+  ) {
+    if (xSignature != null) {
+      dio.options.headers["x-signature"] = xSignature;
     }
   }
 
   void checkToken(
-    String? alreadyToken,
-    String? newToken, {
+    String? previousToken,
+    String? newToken,
+    String? tokenKey, {
+    required Dio dio,
     required bool isAlreadyToken,
   }) {
     if (isAlreadyToken) {
-      if (alreadyToken == null) {
+      if (newToken != null) {
+        dio.options.headers[tokenKey ?? "Authorization"] =
+            "${tokenKey == null ? "Bearer " : ""}$newToken";
+      } else if (previousToken == null) {
         printError(
           "You have no already token. Set up your token before calling this API ! 😅",
         );
         throw "Error Throwing : you have no token";
       } else {
-        dio.options.headers["Authorization"] = "Bearer $alreadyToken";
+        dio.options.headers[tokenKey ?? "Authorization"] =
+            "${tokenKey == null ? "Bearer " : ""}$previousToken";
       }
     } else {
       if (newToken == null) {
@@ -164,7 +174,8 @@ class JackApiMethods {
           "You are calling the un-authenticated public API. You have no token.",
         );
       } else {
-        dio.options.headers["Authorization"] = "Bearer $newToken";
+        dio.options.headers[tokenKey ?? "Authorization"] =
+            "${tokenKey == null ? "Bearer " : ""}$newToken";
       }
     }
   }
@@ -172,11 +183,12 @@ class JackApiMethods {
   Future<Response> _dioMethod({
     required String name,
     required String path,
-    required Map<String, dynamic> extra,
+    required Dio dio,
+    CacheOptionsStatus? extra,
     dynamic data,
   }) async {
     final options = Options().copyWith(
-      extra: extra,
+      extra: extra?.toMap(),
     );
     switch (name) {
       case "GET":
@@ -196,10 +208,17 @@ class JackApiMethods {
           data: data,
           options: options,
         );
+      case "PATCH":
+        return await dio.patch(
+          path,
+          options: options,
+          data: data,
+        );
       case "DELETE":
         return await dio.delete(
           path,
           options: options,
+          data: data,
         );
       default:
         throw "Error Throwing : API method does not correct. Use all capital letter";

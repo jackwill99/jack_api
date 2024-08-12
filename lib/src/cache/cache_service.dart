@@ -3,10 +3,8 @@ import "dart:convert";
 import "dart:isolate";
 
 import "package:cryptography/cryptography.dart";
-import "package:dio/dio.dart";
 import "package:flutter/foundation.dart";
 import "package:flutter/services.dart";
-import "package:get_it/get_it.dart";
 import "package:isar/isar.dart";
 import "package:jack_api/jack_api.dart";
 import "package:jack_api/src/cache/cache_model.dart";
@@ -26,7 +24,7 @@ class CacheService {
     Duration expires,
     dynamic postData,
   ) async {
-    final isar = GetIt.instance<IsarService>().isar;
+    final isar = IsarService.I.isar;
     int? hash;
     if (postData != null) {
       final sha = await Sha256().hash(utf8.encode(postData.toString()));
@@ -34,7 +32,7 @@ class CacheService {
     }
 
     unawaited(
-      isar.writeTxn(
+      isar?.writeTxn(
         () async {
           await isar.apiCaches.put(
             ApiCache()
@@ -62,18 +60,16 @@ class CacheService {
   static Future<ApiCache?> get({
     required String key,
     required String schemaName,
-    bool isImage = false,
     dynamic postData,
   }) async {
-    final isar = GetIt.instance<IsarService>().isar;
+    final isar = IsarService.I.isar;
 
     /// One of the day, user reached the query with limit 10 and page 200. but user can't reach this limit and page in other days again.
     /// In this situation, we need to delete old page queries. So, i decided to check every time user first opened
-    if ((RestApiData.isOnline == null || RestApiData.isOnline!) &&
-        !isImage &&
+    if ((OnlineStatus.I.isOnline != null && OnlineStatus.I.isOnline!) &&
         !schemaList.contains(schemaName)) {
       /// run isolate and remove old expire data
-      unawaited(_removeExpiredData(schemaName));
+      unawaited(removeExpiredData(schemaName));
 
       /// add schema list
       schemaList.add(schemaName);
@@ -83,11 +79,11 @@ class CacheService {
     Hash? hash;
 
     if (postData == null) {
-      cache = await isar.apiCaches.filter().keyEqualTo(key).findFirst();
+      cache = await isar?.apiCaches.filter().keyEqualTo(key).findFirst();
     } else {
       hash = await Sha256().hash(utf8.encode(postData.toString()));
 
-      cache = await isar.apiCaches
+      cache = await isar?.apiCaches
           .filter()
           .keyEqualTo(key)
           .and()
@@ -102,7 +98,7 @@ class CacheService {
     }
 
     /// Cache will delete when device is connected with internet and cache data is expire
-    if ((RestApiData.isOnline == null || RestApiData.isOnline!) &&
+    if ((OnlineStatus.I.isOnline != null && OnlineStatus.I.isOnline!) &&
         DateTime.now().isAfter(cache.expires)) {
       await deleteCache(key, hash);
       return null;
@@ -119,14 +115,14 @@ class CacheService {
   }
 
   static Future<void> deleteCache(String key, Hash? hash) async {
-    final isar = GetIt.instance<IsarService>().isar;
+    final isar = IsarService.I.isar;
     if (hash == null) {
-      await isar.writeTxn(
+      await isar?.writeTxn(
         () async =>
             await isar.apiCaches.filter().keyEndsWith(key).deleteFirst(),
       );
     } else {
-      await isar.writeTxn(
+      await isar?.writeTxn(
         () async => await isar.apiCaches
             .filter()
             .keyEndsWith(key)
@@ -143,15 +139,15 @@ class CacheService {
     String key,
     dynamic postData,
   ) async {
-    final isar = GetIt.instance<IsarService>().isar;
+    final isar = IsarService.I.isar;
 
     if (postData == null) {
-      await isar.writeTxn<int>(
+      await isar?.writeTxn<int>(
         () async => await isar.apiCaches.filter().keyEqualTo(key).deleteAll(),
       );
     } else {
       final hash = await Sha256().hash(utf8.encode(postData.toString()));
-      await isar.apiCaches
+      await isar?.apiCaches
           .filter()
           .keyEqualTo(key)
           .and()
@@ -169,8 +165,8 @@ class CacheService {
   }
 
   static Future<void> resetDb() async {
-    final isar = GetIt.instance<IsarService>().isar;
-    await isar.clear();
+    final isar = IsarService.I.isar;
+    await isar?.writeTxn(() => isar.clear());
     debugPrint("\x1B[30;1m ╔╣   Resetting The ApiCache Database \x1B[0m");
     debugPrint(
       "\x1B[30;1m ║   Successfully deleted all of the api cache data from your system. Feel free to cache 🛸 ✅ \x1B[0m",
@@ -178,12 +174,12 @@ class CacheService {
     debugPrint("\x1B[30;1m ╚   \x1B[0m");
   }
 
-  static Future<int> getSize() async {
-    final isar = GetIt.instance<IsarService>().isar;
-    return await isar.getSize();
+  static Future<int?> getSize() async {
+    final isar = IsarService.I.isar;
+    return isar?.writeTxn<int?>(() => isar.getSize());
   }
 
-  static Future<void> _removeExpiredData(String schemaName) async {
+  static Future<void> removeExpiredData(String schemaName) async {
     /// create the port to receive data from
     final resultPort = ReceivePort();
     final rootToken = RootIsolateToken.instance!;
@@ -195,7 +191,6 @@ class CacheService {
       await Isolate.spawn(
         _calExpiredData,
         [resultPort.sendPort, rootToken, schemaName],
-        errorsAreFatal: true,
         onExit: resultPort.sendPort,
         onError: resultPort.sendPort,
       );
@@ -223,13 +218,11 @@ class CacheService {
     final SendPort resultPort = args[0];
     BackgroundIsolateBinaryMessenger.ensureInitialized(args[1]);
 
-    final isarService =
-        GetIt.I.registerSingleton(IsarService(), instanceName: "isolateIsar");
-
+    final isarService = IsarService.I;
     await isarService.initialize();
 
-    await isarService.isar.writeTxn(() async {
-      final count = await isarService.isar.apiCaches
+    await isarService.isar?.writeTxn(() async {
+      final count = await isarService.isar?.apiCaches
           .filter()
           .schemeNameEqualTo(args[2])
           .and()
@@ -242,8 +235,6 @@ class CacheService {
       );
       debugPrint(" ╚   \x1B[0m");
     });
-
-    GetIt.I.unregister<IsarService>(instanceName: "isolateIsar");
 
     Isolate.exit(resultPort, "Success ");
   }

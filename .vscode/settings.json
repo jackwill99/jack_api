@@ -1,34 +1,34 @@
 {
-    "editor.fontLigatures": true,
-    "editor.formatOnPaste": true,
-    "explorer.confirmDelete": false,
-    "editor.formatOnSave": true,
-    "prettier.tabWidth": 4,
-    "[dart]": {
-        "editor.formatOnType": true,
-        "editor.rulers": [80],
-        "editor.tabSize": 4,
-        "editor.selectionHighlight": false,
-        "editor.suggest.snippetsPreventQuickSuggestions": false,
-        "editor.suggestSelection": "first",
-        "editor.tabCompletion": "onlySnippets",
-        "editor.wordBasedSuggestions": false,
-        "editor.trimAutoWhitespace": true,
-        "editor.defaultFormatter": "Dart-Code.dart-code"
+  "editor.fontLigatures": true,
+  "editor.formatOnPaste": true,
+  "explorer.confirmDelete": false,
+  "editor.formatOnSave": true,
+  "prettier.tabWidth": 2,
+  "[dart]": {
+    "editor.formatOnType": true,
+    "editor.rulers": [80],
+    "editor.tabSize": 4,
+    "editor.selectionHighlight": false,
+    "editor.suggest.snippetsPreventQuickSuggestions": false,
+    "editor.suggestSelection": "first",
+    "editor.tabCompletion": "onlySnippets",
+    "editor.wordBasedSuggestions": "off",
+    "editor.trimAutoWhitespace": true,
+    "editor.defaultFormatter": "Dart-Code.dart-code"
+  },
+  "[yaml]": {
+    "diffEditor.ignoreTrimWhitespace": false
+  },
+  "[json]": {
+    "editor.quickSuggestions": {
+      "strings": true
     },
-    "[yaml]": {
-        "diffEditor.ignoreTrimWhitespace": false
-    },
-    "[json]": {
-        "editor.quickSuggestions": {
-            "strings": true
-        },
-        "editor.suggest.insertMode": "replace"
-    },
-    "editor.codeActionsOnSave": {
-        "source.fixAll": true,
-        "source.organizeImports": true
-    },
-    "explorer.confirmDragAndDrop": false,
-    "typescript.updateImportsOnFileMove.enabled": "always"
+    "editor.suggest.insertMode": "replace"
+  },
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "explicit",
+    "source.organizeImports": "explicit"
+  },
+  "explorer.confirmDragAndDrop": false,
+  "typescript.updateImportsOnFileMove.enabled": "always"
 }
