@@ -37,7 +37,7 @@ class DataCacheService {
 
   Future<String?> read({
     required String key,
-    void Function(String key)? whenExpired,
+    void Function({required String data})? whenExpired,
   }) async {
     final cache = await _isar?.dataCaches.filter().keyEqualTo(key).findFirst();
 
@@ -53,7 +53,7 @@ class DataCacheService {
         await _isar?.dataCaches.filter().keyEqualTo(key).deleteFirst();
       });
 
-      whenExpired?.call(cache.key);
+      whenExpired?.call(data: cache.data);
 
       return null;
     }
@@ -63,7 +63,7 @@ class DataCacheService {
 
   Future<List<String>> readAll({
     required String key,
-    void Function(int id, String key, String cache)? whenExpired,
+    void Function({required String key, required String data})? whenExpired,
   }) async {
     final caches = await _isar?.dataCaches.filter().keyEqualTo(key).findAll();
 
@@ -82,9 +82,8 @@ class DataCacheService {
         });
 
         whenExpired?.call(
-          cache.id,
-          cache.key,
-          cache.data,
+          key: cache.key,
+          data: cache.data,
         );
       } else {
         validData.add(cache.data);
@@ -96,10 +95,10 @@ class DataCacheService {
 
   Future<void> update({
     required String key,
-    required FutureOr<(String, String?)> Function(
-      String data,
+    required FutureOr<({String data, String? extra})> Function({
+      required String data,
       String? extra,
-    ) modifier,
+    }) modifier,
   }) async {
     final cache = await _isar?.dataCaches.filter().keyEqualTo(key).findFirst();
 
@@ -109,13 +108,13 @@ class DataCacheService {
     }
 
     final modifiedData = await modifier(
-      cache.data,
-      cache.extra,
+      data: cache.data,
+      extra: cache.extra,
     );
 
     cache
-      ..data = modifiedData.$1
-      ..extra = modifiedData.$2;
+      ..data = modifiedData.data
+      ..extra = modifiedData.extra;
 
     await _isar?.writeTxn(
       () async {
