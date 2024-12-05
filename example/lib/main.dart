@@ -107,8 +107,8 @@ class _MyHomePageState extends State<MyHomePage> {
               onPressed: () async {
                 await cacheService.update(
                     key: "cacheService",
-                    modifier: (data, extra) {
-                      return ("$data modified", extra);
+                    modifier: ({required data, extra}) async {
+                      return (data: "$data modified", extra: extra);
                     });
               },
               child: const Text("Update data"),

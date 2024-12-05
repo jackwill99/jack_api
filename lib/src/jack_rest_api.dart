@@ -26,7 +26,7 @@ class JackRestApi {
     Future<bool> Function()? onBeforeValidate,
     CallBack? onAfterValidate,
     Future<void> Function()? onTimeOutError,
-    Future<void> Function()? onError,
+    Future<void> Function(DioException error)? onError,
     bool useHttp2 = false,
   }) {
     _isUseHttp2 = useHttp2;
@@ -49,7 +49,7 @@ class JackRestApi {
     Future<bool> Function()? onBeforeValidate,
     CallBack? onAfterValidate,
     Future<void> Function()? onTimeOutError,
-    Future<void> Function()? onError,
+    Future<void> Function(DioException error)? onError,
     bool? useHttp2,
   }) =>
       JackRestApi(
@@ -79,7 +79,7 @@ class JackRestApi {
 
   CallBackNoArgs? _onTimeOutError;
 
-  CallBackNoArgs? _onError;
+  CallBackFunc<DioException>? _onError;
 
   String? get myToken => _token;
 
@@ -191,7 +191,7 @@ class JackRestApi {
     BeforeCallBackConfig<bool?>? beforeValidate,
     AfterCallBackConfig<T, bool?>? afterValidate,
     CallBackConfig? timeOutError,
-    CallBackConfig? error,
+    CallBackConfigArgs? error,
   }) async {
     final tempDio = dio;
     _restApiData.methods.changeContentType(
@@ -222,7 +222,7 @@ class JackRestApi {
       beforeValidate: beforeValidate ?? BeforeCallBackConfig(),
       afterValidate: afterValidate ?? AfterCallBackConfig(),
       timeOutError: timeOutError ?? CallBackConfig(),
-      error: error ?? CallBackConfig(),
+      error: error ?? CallBackConfigArgs(),
       extra: extra,
       oldBeforeValidate: _onBeforeValidate,
       oldAfterValidate: _onAfterValidate,
@@ -261,7 +261,7 @@ class JackRestApi {
     BeforeCallBackConfig<bool?>? beforeValidate,
     AfterCallBackConfig<T, bool?>? afterValidate,
     CallBackConfig? timeOutError,
-    CallBackConfig? error,
+    CallBackConfigArgs? error,
   }) async {
     if (method.toLowerCase() == "GET".toLowerCase()) {
       printError("postWithForm does not allow with GET method ❌");
@@ -310,7 +310,7 @@ class JackRestApi {
       beforeValidate: beforeValidate ?? BeforeCallBackConfig(),
       afterValidate: afterValidate ?? AfterCallBackConfig(),
       timeOutError: timeOutError ?? CallBackConfig(),
-      error: error ?? CallBackConfig(),
+      error: error ?? CallBackConfigArgs(),
       extra: extra,
       oldBeforeValidate: _onBeforeValidate,
       oldAfterValidate: _onAfterValidate,

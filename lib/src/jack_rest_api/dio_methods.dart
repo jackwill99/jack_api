@@ -22,13 +22,13 @@ class JackApiMethods {
     required BeforeCallBackConfig<bool?> beforeValidate,
     required AfterCallBackConfig<T, bool?> afterValidate,
     required CallBackConfig timeOutError,
-    required CallBackConfig error,
+    required CallBackConfigArgs error,
     CacheOptionsStatus? extra,
     dynamic data,
     CallBackWithReturn? oldBeforeValidate,
     CallBack? oldAfterValidate,
     CallBackNoArgs? oldTimeOutError,
-    CallBackNoArgs? oldError,
+    CallBackFunc<DioException>? oldError,
   }) async {
     if (!await checkBeforeValidate(
       beforeValidate: beforeValidate,
@@ -72,7 +72,7 @@ class JackApiMethods {
         );
       } else {
         printError("Dio Excepition error -->");
-        await checkError(error: error, oldError: oldError);
+        await checkError(e: e, error: error, oldError: oldError);
         rethrow;
       }
     }

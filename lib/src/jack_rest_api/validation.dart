@@ -1,4 +1,4 @@
-import "package:jack_api/src/jack_rest_api/model.dart";
+import "package:jack_api/jack_api.dart";
 import "package:jack_api/src/util.dart";
 
 Future<bool> checkBeforeValidate({
@@ -207,16 +207,17 @@ Future<void> checkTimeOut({
 }
 
 Future<void> checkError({
-  required CallBackConfig error,
-  CallBackNoArgs? oldError,
+  required DioException e,
+  required CallBackConfigArgs error,
+  CallBackFunc<DioException>? oldError,
 }) async {
   if (error.allowBoth) {
     if (oldError != null) {
-      await oldError();
+      await oldError(e);
 
       if (error.onCallBack != null) {
         printError("You allow both methods and now calling these ...");
-        await error.onCallBack!();
+        await error.onCallBack!(e);
       } else {
         printError(
           "You allow both methods to call but you have no call back method 🥹",
@@ -226,7 +227,7 @@ Future<void> checkError({
       printError(
         "You allow both methods to call but you have no default error method,",
       );
-      await error.onCallBack!();
+      await error.onCallBack!(e);
     } else {
       printError(
         "You allow both methods to call but you have no both methods. What the fuck bro ... 🖕",
@@ -237,7 +238,7 @@ Future<void> checkError({
       printError(
         "You allow only default error method and calling this method ...",
       );
-      await oldError();
+      await oldError(e);
     } else {
       printError(
         "You allow only default error method but you have no default method",
@@ -248,7 +249,7 @@ Future<void> checkError({
       printError(
         "Overriding the default error method and calling this method ...",
       );
-      await error.onCallBack!();
+      await error.onCallBack!(e);
     } else {
       printError(
         "You are not using both error method. ❌",

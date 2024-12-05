@@ -54,6 +54,16 @@ class CallBackConfig extends CallBackModel {
   CallBackNoArgs? onCallBack;
 }
 
+class CallBackConfigArgs extends CallBackModel {
+  CallBackConfigArgs({
+    super.allowBoth,
+    super.isAllowDefault,
+    this.onCallBack,
+  });
+
+  CallBackFunc<DioException>? onCallBack;
+}
+
 class CallBackModel {
   CallBackModel({
     this.allowBoth = false,
