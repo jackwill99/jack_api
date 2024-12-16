@@ -5,7 +5,6 @@ import "package:flutter/foundation.dart";
 import "package:flutter/services.dart";
 import "package:isar/isar.dart";
 import "package:jack_api/jack_api.dart";
-import "package:jack_api/src/cache/cache_model.dart";
 import "package:jack_api/src/cache/isar_service.dart";
 import "package:jack_api/src/util.dart";
 
@@ -25,6 +24,7 @@ class DataCacheService {
         final dataCache = DataCache()
           ..key = options.key
           ..data = options.data
+          ..schema = options.schema
           ..expires = options.expiry == null
               ? null
               : DateTime.now().add(options.expiry!)
@@ -35,11 +35,17 @@ class DataCacheService {
     );
   }
 
-  Future<String?> read({
-    required String key,
+  Future<DataCache?> read({
+    String? key,
+    String? schema,
     void Function({required String data})? whenExpired,
   }) async {
-    final cache = await _isar?.dataCaches.filter().keyEqualTo(key).findFirst();
+    final cache = await _isar?.dataCaches
+        .filter()
+        .optional(key != null, (q) => q.keyEqualTo(key!))
+        .and()
+        .optional(schema != null, (q) => q.schemaEqualTo(schema!))
+        .findFirst();
 
     if (cache == null) {
       printError("No cache data found");
@@ -50,7 +56,10 @@ class DataCacheService {
     if ((OnlineStatus.I.isOnline != null && OnlineStatus.I.isOnline!) &&
         (cache.expires != null && DateTime.now().isAfter(cache.expires!))) {
       await _isar?.writeTxn(() async {
-        await _isar?.dataCaches.filter().keyEqualTo(key).deleteFirst();
+        await _isar?.dataCaches
+            .filter()
+            .optional(key != null, (q) => q.keyEqualTo(key!))
+            .deleteFirst();
       });
 
       whenExpired?.call(data: cache.data);
@@ -58,27 +67,35 @@ class DataCacheService {
       return null;
     }
 
-    return cache.data;
+    return cache;
   }
 
-  Future<List<String>> readAll({
-    required String key,
+  Future<List<DataCache>> readAll({
+    String? key,
+    String? schema,
     void Function({required String key, required String data})? whenExpired,
   }) async {
-    final caches = await _isar?.dataCaches.filter().keyEqualTo(key).findAll();
+    final caches = await _isar?.dataCaches
+        .filter()
+        .optional(key != null, (q) => q.keyEqualTo(key!))
+        .optional(schema != null, (q) => q.schemaEqualTo(schema!))
+        .findAll();
 
     if (caches == null) {
       printError("No cache data found");
       return [];
     }
 
-    final validData = <String>[];
+    final validData = <DataCache>[];
     for (final cache in caches) {
       /// Cache will delete when device is connected with internet and cache data is expire
       if ((OnlineStatus.I.isOnline != null && OnlineStatus.I.isOnline!) &&
           (cache.expires != null && DateTime.now().isAfter(cache.expires!))) {
         await _isar?.writeTxn(() async {
-          await _isar?.dataCaches.filter().keyEqualTo(key).deleteFirst();
+          await _isar?.dataCaches
+              .filter()
+              .optional(key != null, (q) => q.keyEqualTo(key!))
+              .deleteFirst();
         });
 
         whenExpired?.call(
@@ -86,7 +103,7 @@ class DataCacheService {
           data: cache.data,
         );
       } else {
-        validData.add(cache.data);
+        validData.add(cache);
       }
     }
 
@@ -124,10 +141,15 @@ class DataCacheService {
   }
 
   Future<void> delete({
-    required String key,
+    String? key,
+    Id? id,
   }) async {
     await _isar?.writeTxn(() async {
-      await _isar?.dataCaches.filter().keyEqualTo(key).deleteFirst();
+      await _isar?.dataCaches
+          .filter()
+          .optional(key != null, (q) => q.keyEqualTo(key!))
+          .optional(id != null, (q) => q.idEqualTo(id!))
+          .deleteFirst();
     });
   }
 

@@ -76,6 +76,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 cacheService.store(
                   options: DataCacheOptions(
                     data: "cache service 1",
+                    schema: "schema1",
                     key: "cacheService",
                   ),
                 );
@@ -87,6 +88,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 cacheService.store(
                   options: DataCacheOptions(
                     data: "cache service 2",
+                    schema: "schema2",
                     key: "cacheService",
                   ),
                 );

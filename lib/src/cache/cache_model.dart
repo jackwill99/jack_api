@@ -21,6 +21,8 @@ class DataCache {
   Id id = Isar.autoIncrement;
   @Index()
   late String key;
+  @Index()
+  late String schema;
   late String data;
   String? extra;
   DateTime? expires;

@@ -59,12 +59,14 @@ class DataCacheOptions {
   DataCacheOptions({
     required this.data,
     required this.key,
+    required this.schema,
     this.expiry,
     this.extra,
   });
 
   final String key;
   final String data;
+  final String schema;
   String? extra;
   Duration? expiry;
 }
