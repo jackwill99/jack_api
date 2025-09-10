@@ -3,7 +3,7 @@ import "dart:isolate";
 
 import "package:flutter/foundation.dart";
 import "package:flutter/services.dart";
-import "package:isar/isar.dart";
+import "package:isar_community/isar.dart";
 import "package:jack_api/jack_api.dart";
 import "package:jack_api/src/cache/cache_model.dart";
 import "package:jack_api/src/cache/isar_service.dart";
@@ -144,7 +144,6 @@ class DataCacheService {
       await Isolate.spawn(
         _calExpiredData,
         [resultPort.sendPort, rootToken],
-        errorsAreFatal: true,
         onExit: resultPort.sendPort,
         onError: resultPort.sendPort,
       );
