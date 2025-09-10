@@ -91,7 +91,7 @@ const ApiCacheSchema = CollectionSchema(
   getId: _apiCacheGetId,
   getLinks: _apiCacheGetLinks,
   attach: _apiCacheAttach,
-  version: '3.1.0+1',
+  version: '3.3.0-dev.2',
 );
 
 int _apiCacheEstimateSize(
@@ -1553,7 +1553,7 @@ const DataCacheSchema = CollectionSchema(
   getId: _dataCacheGetId,
   getLinks: _dataCacheGetLinks,
   attach: _dataCacheAttach,
-  version: '3.1.0+1',
+  version: '3.3.0-dev.2',
 );
 
 int _dataCacheEstimateSize(
